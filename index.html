@@ -254,7 +254,6 @@
             }
         }
 
-        // 대사별 이미지 첨부 처리
         function handleSceneFile(event, idx, key) {
             const file = event.target.files[0];
             if (file) {
@@ -401,11 +400,14 @@
                 .choice-btn:hover { background: ${cBorder}; color: #fff; transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
                 .affection-box { background: ${cBox}; border: 3px solid ${cBorder}; border-radius: 0; box-shadow: 4px 4px 0 rgba(0,0,0,0.8); }
                 .ending-title { font-family: 'DungGeunMo'; text-shadow: 4px 4px 0 #000; }
+                .restart-btn { background: ${cBox}; border: 3px solid ${cBorder}; color: ${cText}; font-family: 'DungGeunMo'; box-shadow: 4px 4px 0 rgba(0,0,0,0.8); }
+                .restart-btn:hover { background: ${cBorder}; color: #fff; transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
                 `;
             } else {
                 themeCSS = `
                 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
                 body { font-family: 'Pretendard', sans-serif; }
+                /* border-top 제거 (얇은 선 문제 해결) */
                 .ui-box { background: linear-gradient(180deg, transparent 0%, ${cBox}e6 40%, ${cBox} 100%); padding: 40px 60px 30px 60px; min-height: 240px; }
                 .name-tag { background: transparent; color: ${cName}; font-size: 26px; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.8); letter-spacing: 1px; margin-bottom: 15px; display: inline-block; position: relative; }
                 .name-tag::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 40px; height: 3px; background: ${cBorder}; border-radius: 2px; }
@@ -413,6 +415,8 @@
                 .choice-btn:hover { background: ${cBorder}; color: white; transform: scale(1.02); border-color: ${cBorder}; }
                 .affection-box { background: rgba(0,0,0,0.4); backdrop-filter: blur(12px); border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); padding: 8px 20px; font-size: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
                 .ending-title { font-family: 'Pretendard'; font-weight: 900; letter-spacing: 4px; }
+                .restart-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: ${cText}; backdrop-filter: blur(12px); font-family: 'Pretendard'; border-radius: 8px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+                .restart-btn:hover { background: ${cBorder}; color: white; transform: scale(1.02); border-color: ${cBorder}; }
                 `;
             }
 
@@ -474,7 +478,6 @@
         .emo-angry.speaker-char1 .char1 { filter: brightness(0.6) contrast(1.3); }
         .emo-angry.speaker-char2 .char2 { filter: brightness(0.6) contrast(1.3); }
 
-        /* sad 감정 시 반투명(opacity) 제거하고 위치와 흑백 필터만 적용 */
         .emo-sad.speaker-char1 .char1 { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}) translateY(20px); filter: grayscale(0.4); }
         .emo-sad.speaker-char2 .char2 { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}) translateY(20px); filter: grayscale(0.4); }
 
@@ -483,6 +486,8 @@
         .ending-content { position: relative; z-index: 2; color: white; }
         .ending-title { font-size: 60px; margin-bottom: 20px; color: ${cBorder}; }
         .ending-sub { font-size: 24px; font-weight: 500; opacity: 0.9; }
+        
+        .restart-btn { margin-top: 40px; padding: 12px 30px; font-size: 20px; cursor: pointer; transition: all 0.2s; outline: none; }
 
         ${themeCSS}
     </style>
@@ -521,6 +526,7 @@
         <div class="ending-content">
             <h1 class="ending-title" id="end-title"></h1>
             <p class="ending-sub" id="end-sub"></p>
+            <button class="restart-btn" onclick="restartGame()">다시 시작하기</button>
         </div>
     </div>
 
@@ -655,6 +661,30 @@
             endingScreen.style.pointerEvents = 'auto';
         }
 
+        function restartGame() {
+            // 변수 초기화
+            currentStep = 0;
+            affection = 50;
+            updateAffection(0);
+            
+            // 엔딩 화면 숨기기
+            endingScreen.style.opacity = '0';
+            endingScreen.style.pointerEvents = 'none';
+            
+            // UI 및 캐릭터 다시 보이기
+            dialogUI.style.display = 'flex';
+            if (affUI) affUI.style.display = '';
+            document.getElementById('char1').style.display = '';
+            document.getElementById('char2').style.display = '';
+            
+            // 캐릭터 이미지를 기본 이미지로 리셋
+            document.getElementById('char1').src = "${defaultC1Img}";
+            document.getElementById('char2').src = "${defaultC2Img}";
+            
+            // 첫 씬 재생
+            playScene();
+        }
+
         playScene();
     <\/script>
 </body>
@@ -709,12 +739,12 @@
             isRecording = true;
             let frames = [];
             let elapsed = 0;
-            const duration = 5000;
+            const duration = 15000; // 녹화 시간 15초로 변경
             const intervalMs = 250;
 
             btn.innerText = "🔴 녹화 중...";
             btn.classList.replace('bg-rose-600', 'bg-red-600');
-            showToast('녹화 시작! 화면을 클릭해 대사를 넘겨주세요.');
+            showToast('녹화 시작! 15초 동안 화면을 클릭해 대사를 넘겨주세요.');
 
             iframe.contentWindow.focus();
 
@@ -733,7 +763,7 @@
 
         function finishRecording(frames, btn) {
             btn.innerText = "⏳ 렌더링 중...";
-            showToast('캡처 완료! GIF 변환 중입니다.');
+            showToast('캡처 완료! GIF 변환 중입니다. (시간이 조금 걸릴 수 있습니다)');
 
             gifshot.createGIF({
                 images: frames,
