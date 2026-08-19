@@ -1,796 +1,403 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Novel Studio Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <title>LogSnap - 로그 발췌 메이커</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- 예쁜 웹 폰트 대거 추가 불러오기 -->
     <style>
-        body { font-family: 'Pretendard', sans-serif; overflow: hidden; background: #f4f4f5; color: #18181b; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+        /* 구글 폰트 (노토산스, 나눔명조, 고운돋움, 고운바탕) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gowun+Dodum&family=Gowun+Batang&display=swap');
         
-        /* 전문가용 SaaS 스타일 UI */
-        .tab-btn { padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 700; color: #71717a; border-bottom: 2px solid transparent; transition: all 0.2s; cursor: pointer; }
-        .tab-btn.active { color: #18181b; border-bottom-color: #18181b; }
-        
-        .panel-section { display: none; animation: fadeIn 0.3s ease; }
-        .panel-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* 눈누 폰트 (리디바탕, 둥근모, 프리텐다드, 마루부리, 교보손글씨) */
+        @font-face { font-family: 'RIDIBatang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); font-weight: normal; font-style: normal; }
+        @font-face { font-family: 'NeoDunggeunmo'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.3/NeoDunggeunmo.woff') format('woff'); font-weight: normal; font-style: normal; }
+        @font-face { font-family: 'Pretendard-Regular'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff'); font-weight: 400; font-style: normal; }
+        @font-face { font-family: 'MaruBuri'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2010-2107@1.0/MaruBuri-Regular.woff') format('woff'); font-weight: normal; font-style: normal; }
+        @font-face { font-family: 'KyoboHandwriting2019'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); font-weight: normal; font-style: normal; }
 
-        .input-group { margin-bottom: 1.2rem; }
-        .input-group label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #52525b; margin-bottom: 0.5rem; }
-        .input-group input[type="text"], .input-group textarea, .input-group select, .input-group input[type="number"] { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #e4e4e7; border-radius: 6px; font-size: 0.8rem; outline: none; transition: all 0.2s; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-        .input-group input[type="color"] { height: 36px; padding: 0; width: 100%; border-radius: 6px; border: 1px solid #e4e4e7; cursor: pointer; overflow: hidden; }
-        .input-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        .input-group input[type="color"]::-webkit-color-swatch { border: none; }
-        .input-group input:focus, .input-group textarea:focus { border-color: #18181b; box-shadow: 0 0 0 2px rgba(24,24,27,0.1); }
-        
-        .btn-outline { background: #fff; border: 1px solid #d4d4d8; color: #18181b; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-outline:hover { background: #f4f4f5; }
-
-        /* 세련된 라디오 버튼 */
-        .radio-group { display: flex; gap: 8px; background: #e4e4e7; padding: 4px; border-radius: 8px; }
-        .radio-label { flex: 1; text-align: center; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #71717a; transition: all 0.2s; }
-        .radio-input:checked + .radio-label { background: #fff; color: #18181b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .radio-input { display: none; }
-
-        /* 슬라이더 커스텀 */
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 8px 0; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: #18181b; cursor: pointer; margin-top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #d4d4d8; border-radius: 2px; }
-
-        .scene-box { background: #fff; border: 1px solid #e4e4e7; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: border-color 0.2s; }
-        .scene-box:hover { border-color: #a1a1aa; }
-    </style>
-</head>
-<body class="flex h-screen w-screen overflow-hidden">
-
-    <!-- 왼쪽: 빌더 패널 -->
-    <aside class="w-full md:w-[420px] h-full bg-zinc-50 border-r border-zinc-200 flex flex-col shadow-2xl z-10 shrink-0">
-        <!-- 헤더 & 액션 버튼 -->
-        <div class="p-5 bg-white border-b border-zinc-200 flex flex-col gap-3">
-            <h1 class="text-base font-black tracking-tight text-zinc-900">VN Studio Pro</h1>
-            <div class="flex gap-2">
-                <button onclick="copyHTML()" class="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-bold py-2 rounded-md transition-colors">코드 복사</button>
-                <button onclick="saveAsHTML()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-bold py-2 rounded-md transition-colors shadow-sm">HTML 저장</button>
-                <button id="btn-gif" onclick="recordGIF()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold py-2 rounded-md transition-colors shadow-sm">GIF 녹화</button>
-            </div>
-        </div>
-
-        <!-- 탭 메뉴 -->
-        <div class="flex px-2 border-b border-zinc-200 bg-white">
-            <div class="tab-btn active" onclick="switchTab('tab-theme')">테마/배경</div>
-            <div class="tab-btn" onclick="switchTab('tab-char')">기본 캐릭터</div>
-            <div class="tab-btn" onclick="switchTab('tab-script')">스크립트</div>
-            <div class="tab-btn" onclick="switchTab('tab-end')">엔딩</div>
-        </div>
-
-        <!-- 탭 컨텐츠 영역 -->
-        <div class="flex-1 overflow-y-auto p-5 pb-32" id="form-container">
-            
-            <!-- 1. 테마/배경 탭 -->
-            <div id="tab-theme" class="panel-section active">
-                <div class="input-group">
-                    <label>UI 테마</label>
-                    <div class="radio-group">
-                        <input type="radio" id="theme_modern" name="theme" value="modern" class="radio-input" checked onchange="debouncedUpdate()">
-                        <label for="theme_modern" class="radio-label">✨ 모던 시네마틱</label>
-                        <input type="radio" id="theme_retro" name="theme" value="retro" class="radio-input" onchange="debouncedUpdate()">
-                        <label for="theme_retro" class="radio-label">💾 90s 레트로</label>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label>호감도 UI 표시</label>
-                    <div class="radio-group">
-                        <input type="radio" id="aff_on" name="affection_ui" value="on" class="radio-input" checked onchange="debouncedUpdate()">
-                        <label for="aff_on" class="radio-label">표시함</label>
-                        <input type="radio" id="aff_off" name="affection_ui" value="off" class="radio-input" onchange="debouncedUpdate()">
-                        <label for="aff_off" class="radio-label">숨김</label>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label>배경 이미지</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="bg_img" value="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000&auto=format&fit=crop" class="flex-1" oninput="this.removeAttribute('data-base64'); debouncedUpdate();">
-                        <input type="file" id="bg_file" accept="image/*" class="hidden" onchange="handleFileUpload(event, 'bg_img')">
-                        <button type="button" onclick="document.getElementById('bg_file').click()" class="btn-outline shrink-0">첨부</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-6">
-                    <div class="input-group mb-0"><label>이름 색상</label><input type="color" id="color_name" value="#ffffff" oninput="debouncedUpdate()"></div>
-                    <div class="input-group mb-0"><label>대사 색상</label><input type="color" id="color_text" value="#f4f4f5" oninput="debouncedUpdate()"></div>
-                    <div class="input-group mb-0"><label>대화창 배경</label><input type="color" id="color_box" value="#09090b" oninput="debouncedUpdate()"></div>
-                    <div class="input-group mb-0"><label>포인트(테두리)</label><input type="color" id="color_border" value="#3b82f6" oninput="debouncedUpdate()"></div>
-                </div>
-            </div>
-
-            <!-- 2. 캐릭터 탭 (기본 설정) -->
-            <div id="tab-char" class="panel-section">
-                <p class="text-[11px] text-zinc-500 mb-4 leading-relaxed">이곳에서 캐릭터의 기본 위치와 크기, 기본 이미지를 설정합니다. 표정 변화는 '스크립트' 탭에서 대사마다 개별 변경할 수 있습니다.</p>
-                
-                <!-- 캐릭터 1 (좌측) -->
-                <div class="mb-8">
-                    <h3 class="text-xs font-black text-zinc-700 mb-3 border-b border-zinc-200 pb-2">👤 캐릭터 1 (좌측) 기본 설정</h3>
-                    <div class="input-group">
-                        <label>기본 스탠딩 이미지</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="char1_img" value="https://cdn-icons-png.flaticon.com/512/4144/4144781.png" class="flex-1" oninput="this.removeAttribute('data-base64'); debouncedUpdate();">
-                            <input type="file" id="char1_file" accept="image/*" class="hidden" onchange="handleFileUpload(event, 'char1_img')">
-                            <button type="button" onclick="document.getElementById('char1_file').click()" class="btn-outline shrink-0">첨부</button>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg border border-zinc-200 shadow-sm space-y-4">
-                        <div class="input-group mb-0">
-                            <label><span>크기 (Scale)</span><span id="val_c1_scale" class="text-zinc-400">100%</span></label>
-                            <input type="range" id="char1_scale" min="50" max="200" value="100" oninput="document.getElementById('val_c1_scale').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                        <div class="input-group mb-0">
-                            <label><span>좌우 위치 (X)</span><span id="val_c1_x" class="text-zinc-400">-25%</span></label>
-                            <input type="range" id="char1_x" min="-100" max="100" value="-25" oninput="document.getElementById('val_c1_x').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                        <div class="input-group mb-0">
-                            <label><span>상하 위치 (Y)</span><span id="val_c1_y" class="text-zinc-400">0%</span></label>
-                            <input type="range" id="char1_y" min="-50" max="100" value="0" oninput="document.getElementById('val_c1_y').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 캐릭터 2 (우측) -->
-                <div>
-                    <h3 class="text-xs font-black text-zinc-700 mb-3 border-b border-zinc-200 pb-2">👤 캐릭터 2 (우측) 기본 설정</h3>
-                    <div class="input-group">
-                        <label>기본 스탠딩 이미지</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="char2_img" value="https://cdn-icons-png.flaticon.com/512/4144/4144760.png" class="flex-1" oninput="this.removeAttribute('data-base64'); debouncedUpdate();">
-                            <input type="file" id="char2_file" accept="image/*" class="hidden" onchange="handleFileUpload(event, 'char2_img')">
-                            <button type="button" onclick="document.getElementById('char2_file').click()" class="btn-outline shrink-0">첨부</button>
-                        </div>
-                    </div>
-                    <div class="bg-white p-4 rounded-lg border border-zinc-200 shadow-sm space-y-4">
-                        <div class="input-group mb-0">
-                            <label><span>크기 (Scale)</span><span id="val_c2_scale" class="text-zinc-400">100%</span></label>
-                            <input type="range" id="char2_scale" min="50" max="200" value="100" oninput="document.getElementById('val_c2_scale').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                        <div class="input-group mb-0">
-                            <label><span>좌우 위치 (X)</span><span id="val_c2_x" class="text-zinc-400">25%</span></label>
-                            <input type="range" id="char2_x" min="-100" max="100" value="25" oninput="document.getElementById('val_c2_x').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                        <div class="input-group mb-0">
-                            <label><span>상하 위치 (Y)</span><span id="val_c2_y" class="text-zinc-400">0%</span></label>
-                            <input type="range" id="char2_y" min="-50" max="100" value="0" oninput="document.getElementById('val_c2_y').innerText=this.value+'%'; debouncedUpdate()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. 스크립트 탭 -->
-            <div id="tab-script" class="panel-section">
-                <button type="button" onclick="addDialog()" class="w-full bg-zinc-800 text-white py-2 rounded-md text-xs font-bold mb-4 hover:bg-zinc-700 transition-colors">+ 새로운 씬 추가</button>
-                <div id="script-container" class="space-y-3"></div>
-            </div>
-
-            <!-- 4. 엔딩 탭 -->
-            <div id="tab-end" class="panel-section">
-                <p class="text-[11px] text-zinc-500 mb-4 leading-relaxed">모든 대사가 끝나면 대화창이 사라지고, 목표 호감도 달성 여부에 따라 전용 엔딩 화면이 연출됩니다.</p>
-                <div class="input-group"><label>해피 엔딩 목표 호감도</label><input type="number" id="end_threshold" value="60" oninput="debouncedUpdate()"></div>
-                
-                <div class="space-y-4">
-                    <div class="p-4 bg-white border border-rose-200 rounded-lg shadow-sm">
-                        <h4 class="text-xs font-black text-rose-600 mb-3">🌸 해피 엔딩 연출</h4>
-                        <div class="input-group mb-2"><label>엔딩 배경 이미지</label><input type="text" id="end_h_bg" value="https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1000&auto=format&fit=crop" oninput="debouncedUpdate()"></div>
-                        <div class="input-group mb-2"><label>타이틀 문구</label><input type="text" id="end_h_title" value="HAPPY ENDING" oninput="debouncedUpdate()"></div>
-                        <div class="input-group mb-0"><label>서브 텍스트</label><textarea id="end_h_sub" rows="2" oninput="debouncedUpdate()">드디어 내 마음이 닿았다.</textarea></div>
-                    </div>
-                    <div class="p-4 bg-white border border-zinc-300 rounded-lg shadow-sm">
-                        <h4 class="text-xs font-black text-zinc-700 mb-3">🥀 배드 엔딩 연출</h4>
-                        <div class="input-group mb-2"><label>엔딩 배경 이미지 (어두운 배경 권장)</label><input type="text" id="end_b_bg" value="https://images.unsplash.com/photo-1503455637927-730bce8583c0?q=80&w=1000&auto=format&fit=crop" oninput="debouncedUpdate()"></div>
-                        <div class="input-group mb-2"><label>타이틀 문구</label><input type="text" id="end_b_title" value="BAD ENDING" oninput="debouncedUpdate()"></div>
-                        <div class="input-group mb-0"><label>서브 텍스트</label><textarea id="end_b_sub" rows="2" oninput="debouncedUpdate()">결국 우리는 엇갈리고 말았다...</textarea></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </aside>
-
-    <!-- 오른쪽: 실시간 미리보기 (16:9 꽉 찬 뷰) -->
-    <main class="flex-1 h-full bg-zinc-900 p-4 md:p-8 z-20 relative flex items-center justify-center">
-        <div class="w-full max-w-[1100px] aspect-[16/9] rounded-xl overflow-hidden shadow-2xl border border-zinc-700 bg-black relative">
-            <iframe id="preview" class="w-full h-full border-none absolute inset-0"></iframe>
-        </div>
-    </main>
-
-    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-zinc-900 text-white px-6 py-3 rounded-full shadow-2xl font-bold transition-all duration-300 opacity-0 pointer-events-none z-50"></div>
-
-    <script>
-        // --- 탭 전환 로직 ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.panel-section').forEach(panel => panel.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --p-gap: 12px;
+            --padding: 60px;
         }
 
-        // --- 데이터 상태 관리 ---
-        let vnScript = [
-            { speaker: "char1", name: "최애캐", text: "여... 여긴 어디지? 당신은 누구야?", emotion: "surprise", char1_img: "", char2_img: "", choices: [] },
-            { speaker: "char2", name: "주인공", text: "정신이 들어? 쓰러져 있길래 데려왔어.", emotion: "normal", char1_img: "", char2_img: "", choices: [] },
-            { speaker: "char1", name: "최애캐", text: "날 계속 빤히 쳐다보고 있잖아...", emotion: "normal", char1_img: "", char2_img: "", choices: [
-                { text: "귀여워서 쳐다봤어.", aff: 15 },
-                { text: "얼굴에 뭐 묻었어.", aff: -5 }
-            ]},
-            { speaker: "char1", name: "최애캐", text: "그, 그런 말 한다고 기뻐할 줄 알아?!", emotion: "happy", char1_img: "", char2_img: "", choices: [] }
-        ];
+        * { box-sizing: border-box; }
 
-        let previewState = { step: 0, affection: 50 };
-
-        function val(id) { const el = document.getElementById(id); return el ? (el.dataset.base64 || el.value) : ''; }
-        function getTheme() { return document.querySelector('input[name="theme"]:checked').value; }
-        
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg; toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, -20px)';
-            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%, 0)'; }, 3000);
+        body { 
+            font-family: 'Pretendard-Regular', 'Noto Sans KR', sans-serif; 
+            display: flex; 
+            background: #f4f6f8; 
+            margin: 0; 
+            height: 100vh; 
+            color: #333;
         }
 
-        function handleFileUpload(event, targetId) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const input = document.getElementById(targetId);
-                    input.dataset.base64 = e.target.result;
-                    input.value = `[첨부됨] ${file.name}`;
-                    debouncedUpdate();
-                };
-                reader.readAsDataURL(file);
-            }
+        /* 왼쪽 설정 패널 */
+        #sidebar { 
+            width: 320px; 
+            background: #fff; 
+            padding: 25px; 
+            box-shadow: 2px 0 15px rgba(0,0,0,0.03); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            overflow-y: auto;
+            border-right: 1px solid #e9ecef;
+        }
+        
+        #sidebar::-webkit-scrollbar { width: 6px; }
+        #sidebar::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+
+        .logo { font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #1c7ed6; letter-spacing: -0.5px; }
+        .section-title { font-size: 13px; font-weight: 700; color: #868e96; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .control-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+        .control-group label { font-size: 13px; font-weight: 600; color: #495057; display: flex; justify-content: space-between;}
+        
+        input[type="range"] { accent-color: #1c7ed6; cursor: pointer; }
+        select, input[type="file"] { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; }
+        select { cursor: pointer; }
+        
+        .btn-row { display: flex; gap: 8px; }
+        button { 
+            padding: 10px; cursor: pointer; border: none; border-radius: 6px; 
+            font-weight: 600; font-size: 13px; transition: all 0.2s; 
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        button:hover { filter: brightness(0.95); }
+        
+        .btn-theme { flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; color: #495057; }
+        .btn-action { background: #e7f5ff; color: #1c7ed6; flex: 1; }
+        .btn-hl { background: #ffeaa7; color: #000; flex: 1; }
+        .btn-clear { background: #f1f3f5; color: #495057; }
+        
+        .btn-primary { background: #1c7ed6; color: #fff; font-size: 15px; padding: 14px; margin-top: 10px; }
+        .btn-secondary { background: #343a40; color: #fff; font-size: 15px; padding: 14px; }
+
+        /* 오른쪽 미리보기 패널 */
+        #main { 
+            flex-grow: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 40px; 
+            overflow-y: auto; 
+            background: repeating-linear-gradient(45deg, #f1f3f5, #f1f3f5 10px, #f8f9fa 10px, #f8f9fa 20px);
+        }
+        
+        /* 캡처되는 도화지 영역 */
+        #capture-wrapper { 
+            background-color: var(--bg-color);
+            padding: var(--padding); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            min-width: 500px; 
+            max-width: 800px; 
+            width: 100%;
+            transition: padding 0.2s, background-color 0.3s;
+            background-size: cover;
+            background-position: center;
         }
 
-        function handleSceneFile(event, idx, key) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    vnScript[idx][key] = e.target.result;
-                    renderScript();
-                    debouncedUpdate();
-                };
-                reader.readAsDataURL(file);
-            }
+        /* 텍스트 입력 영역 */
+        #editor { 
+            outline: none; 
+            min-height: 300px; 
+            font-size: 16px;
+            line-height: 1.6;
+            letter-spacing: 0px;
+            word-break: keep-all;
+            color: var(--text-color);
+            font-family: 'RIDIBatang', serif; /* 기본 폰트 */
+            transition: color 0.3s;
         }
-
-        // --- 스크립트 에디터 렌더링 ---
-        function renderScript() {
-            const container = document.getElementById('script-container');
-            container.innerHTML = '';
-            
-            vnScript.forEach((scene, i) => {
-                let choicesHTML = '';
-                scene.choices.forEach((c, ci) => {
-                    choicesHTML += `
-                    <div class="flex gap-2 mt-2 pl-3 border-l-2 border-zinc-200">
-                        <div class="flex-1"><input type="text" value="${c.text}" class="w-full text-xs p-1.5 border border-zinc-200 rounded" placeholder="선택지" oninput="vnScript[${i}].choices[${ci}].text=this.value; debouncedUpdate()"></div>
-                        <div class="w-16"><input type="number" value="${c.aff}" class="w-full text-xs p-1.5 border border-zinc-200 rounded" placeholder="호감도" oninput="vnScript[${i}].choices[${ci}].aff=Number(this.value); debouncedUpdate()"></div>
-                        <button type="button" onclick="removeChoice(${i}, ${ci})" class="text-red-500 text-[10px] font-bold px-1 hover:underline">삭제</button>
-                    </div>`;
-                });
-
-                const displayVal1 = (scene.char1_img && scene.char1_img.startsWith('data:')) ? '[첨부된 이미지]' : (scene.char1_img || '');
-                const displayVal2 = (scene.char2_img && scene.char2_img.startsWith('data:')) ? '[첨부된 이미지]' : (scene.char2_img || '');
-
-                container.innerHTML += `
-                    <div class="scene-box group">
-                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button type="button" class="bg-zinc-100 hover:bg-zinc-200 rounded px-1.5 py-0.5 text-[10px] font-bold" onclick="moveDialog(${i}, -1)" ${i===0?'disabled':''}>▲</button>
-                            <button type="button" class="bg-zinc-100 hover:bg-zinc-200 rounded px-1.5 py-0.5 text-[10px] font-bold" onclick="moveDialog(${i}, 1)" ${i===vnScript.length-1?'disabled':''}>▼</button>
-                            <button type="button" class="bg-red-50 text-red-500 rounded px-1.5 py-0.5 text-[10px] font-bold ml-1" onclick="removeDialog(${i})">삭제</button>
-                        </div>
-                        <div class="text-[10px] font-black text-zinc-400 mb-2 uppercase tracking-wider">Scene ${i + 1}</div>
-                        
-                        <div class="flex gap-2 mb-2">
-                            <div class="w-1/4">
-                                <select class="w-full text-xs p-2 border border-zinc-200 rounded bg-zinc-50 font-bold text-zinc-700" onchange="vnScript[${i}].speaker=this.value; debouncedUpdate()">
-                                    <option value="char1" ${scene.speaker==='char1'?'selected':''}>🗣 캐릭터1</option>
-                                    <option value="char2" ${scene.speaker==='char2'?'selected':''}>🗣 캐릭터2</option>
-                                    <option value="none" ${scene.speaker==='none'?'selected':''}>기타(독백)</option>
-                                </select>
-                            </div>
-                            <div class="w-1/4"><input type="text" value="${scene.name}" class="w-full text-xs p-2 border border-zinc-200 rounded bg-zinc-50" placeholder="이름" oninput="vnScript[${i}].name=this.value; debouncedUpdate()"></div>
-                            <div class="w-2/4">
-                                <select class="w-full text-xs p-2 border border-zinc-200 rounded bg-zinc-50" onchange="vnScript[${i}].emotion=this.value; debouncedUpdate()">
-                                    <option value="normal" ${scene.emotion==='normal'?'selected':''}>기본</option>
-                                    <option value="happy" ${scene.emotion==='happy'?'selected':''}>기쁨 (점프)</option>
-                                    <option value="surprise" ${scene.emotion==='surprise'?'selected':''}>놀람 (흔들림)</option>
-                                    <option value="angry" ${scene.emotion==='angry'?'selected':''}>화남 (어두움)</option>
-                                    <option value="sad" ${scene.emotion==='sad'?'selected':''}>슬픔 (처짐)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <textarea rows="2" class="w-full text-xs p-2 border border-zinc-200 rounded bg-zinc-50 resize-none mb-2" placeholder="대사 입력" oninput="vnScript[${i}].text=this.value; debouncedUpdate()">${scene.text}</textarea>
-                        
-                        <div class="flex gap-2 mb-2">
-                            <div class="w-1/2 flex gap-1 items-center bg-zinc-50 border border-zinc-200 rounded p-1">
-                                <span class="text-[9px] font-bold text-zinc-400 whitespace-nowrap ml-1">캐릭1 변경</span>
-                                <input type="text" value="${displayVal1}" class="w-full text-[10px] p-1 bg-transparent outline-none" placeholder="비워두면 유지됨" oninput="vnScript[${i}].char1_img=this.value; debouncedUpdate()">
-                                <input type="file" id="file_c1_${i}" accept="image/*" class="hidden" onchange="handleSceneFile(event, ${i}, 'char1_img')">
-                                <button type="button" onclick="document.getElementById('file_c1_${i}').click()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-700 px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors">첨부</button>
-                            </div>
-                            <div class="w-1/2 flex gap-1 items-center bg-zinc-50 border border-zinc-200 rounded p-1">
-                                <span class="text-[9px] font-bold text-zinc-400 whitespace-nowrap ml-1">캐릭2 변경</span>
-                                <input type="text" value="${displayVal2}" class="w-full text-[10px] p-1 bg-transparent outline-none" placeholder="비워두면 유지됨" oninput="vnScript[${i}].char2_img=this.value; debouncedUpdate()">
-                                <input type="file" id="file_c2_${i}" accept="image/*" class="hidden" onchange="handleSceneFile(event, ${i}, 'char2_img')">
-                                <button type="button" onclick="document.getElementById('file_c2_${i}').click()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-700 px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors">첨부</button>
-                            </div>
-                        </div>
-
-                        <div class="mt-2 pt-2 border-t border-zinc-100">
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] font-bold text-zinc-400">선택지 (${scene.choices.length})</span>
-                                <button type="button" onclick="addChoice(${i})" class="text-zinc-600 hover:text-zinc-900 text-[10px] font-bold">+ 추가</button>
-                            </div>
-                            ${choicesHTML}
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function addDialog() { vnScript.push({ speaker: "char1", name: "이름", text: "새 대사", emotion: "normal", char1_img: "", char2_img: "", choices: [] }); renderScript(); debouncedUpdate(); }
-        function removeDialog(idx) { vnScript.splice(idx, 1); renderScript(); debouncedUpdate(); }
-        function moveDialog(idx, dir) { if(idx+dir < 0 || idx+dir >= vnScript.length) return; const t = vnScript[idx]; vnScript[idx] = vnScript[idx+dir]; vnScript[idx+dir] = t; renderScript(); debouncedUpdate(); }
-        function addChoice(idx) { vnScript[idx].choices.push({ text: "새 선택지", aff: 5 }); renderScript(); debouncedUpdate(); }
-        function removeChoice(idx, cIdx) { vnScript[idx].choices.splice(cIdx, 1); renderScript(); debouncedUpdate(); }
-
-        // --- 출력용 HTML 코드 제너레이터 ---
-        function generateCode(startStep = 0, startAffection = 50) {
-            const theme = getTheme();
-            const showAffection = document.querySelector('input[name="affection_ui"]:checked').value === 'on';
-            const bgImg = val('bg_img');
-            
-            // 캐릭터 기본 설정
-            const defaultC1Img = val('char1_img');
-            const c1Scale = val('char1_scale') / 100;
-            const c1X = val('char1_x');
-            const c1Y = val('char1_y');
-            
-            const defaultC2Img = val('char2_img');
-            const c2Scale = val('char2_scale') / 100;
-            const c2X = val('char2_x');
-            const c2Y = val('char2_y');
-            
-            const cName = val('color_name');
-            const cText = val('color_text');
-            const cBox = val('color_box');
-            const cBorder = val('color_border');
-
-            const endings = {
-                threshold: Number(val('end_threshold')),
-                happy: { bg: val('end_h_bg'), title: val('end_h_title'), sub: val('end_h_sub') },
-                bad: { bg: val('end_b_bg'), title: val('end_b_title'), sub: val('end_b_sub') }
-            };
-
-            // 편집 중 화면 초기화 방지: 현재 Step까지의 이미지를 계산하여 렌더링
-            let currentC1Img = defaultC1Img;
-            let currentC2Img = defaultC2Img;
-            for(let i = 0; i <= startStep; i++) {
-                if(vnScript[i]) {
-                    if(vnScript[i].char1_img) currentC1Img = vnScript[i].char1_img;
-                    if(vnScript[i].char2_img) currentC2Img = vnScript[i].char2_img;
-                }
-            }
-            
-            // 테마별 CSS 로직
-            let themeCSS = '';
-            if (theme === 'retro') {
-                themeCSS = `
-                @import url('https://cdn.jsdelivr.net/gh/DungGuenMo/웹폰트/DungGeunMo.css');
-                body { font-family: 'DungGeunMo', sans-serif; }
-                .bg-layer { image-rendering: pixelated; }
-                .char-layer { image-rendering: pixelated; }
-                .ui-box { background: ${cBox}; border: 4px solid ${cBorder}; border-radius: 0; box-shadow: inset 2px 2px 0 rgba(255,255,255,0.2), inset -2px -2px 0 rgba(0,0,0,0.5); padding: 25px 35px; }
-                .name-tag { background: ${cBorder}; color: ${cName}; border: 2px solid #fff; padding: 4px 16px; font-size: 22px; box-shadow: 2px 2px 0 rgba(0,0,0,0.8); display: inline-block; }
-                .choice-btn { background: ${cBox}; border: 3px solid ${cBorder}; color: ${cText}; font-family: 'DungGeunMo'; border-radius: 0; box-shadow: 4px 4px 0 rgba(0,0,0,0.8); }
-                .choice-btn:hover { background: ${cBorder}; color: #fff; transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
-                .affection-box { background: ${cBox}; border: 3px solid ${cBorder}; border-radius: 0; box-shadow: 4px 4px 0 rgba(0,0,0,0.8); }
-                .ending-title { font-family: 'DungGeunMo'; text-shadow: 4px 4px 0 #000; }
-                .restart-btn { background: ${cBox}; border: 3px solid ${cBorder}; color: ${cText}; font-family: 'DungGeunMo'; box-shadow: 4px 4px 0 rgba(0,0,0,0.8); }
-                .restart-btn:hover { background: ${cBorder}; color: #fff; transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.8); }
-                `;
-            } else {
-                themeCSS = `
-                @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-                body { font-family: 'Pretendard', sans-serif; }
-                /* border-top 제거 (얇은 선 문제 해결) */
-                .ui-box { background: linear-gradient(180deg, transparent 0%, ${cBox}e6 40%, ${cBox} 100%); padding: 40px 60px 30px 60px; min-height: 240px; }
-                .name-tag { background: transparent; color: ${cName}; font-size: 26px; font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,0.8); letter-spacing: 1px; margin-bottom: 15px; display: inline-block; position: relative; }
-                .name-tag::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 40px; height: 3px; background: ${cBorder}; border-radius: 2px; }
-                .choice-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: ${cText}; backdrop-filter: blur(12px); font-family: 'Pretendard'; border-radius: 8px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-                .choice-btn:hover { background: ${cBorder}; color: white; transform: scale(1.02); border-color: ${cBorder}; }
-                .affection-box { background: rgba(0,0,0,0.4); backdrop-filter: blur(12px); border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); padding: 8px 20px; font-size: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-                .ending-title { font-family: 'Pretendard'; font-weight: 900; letter-spacing: 4px; }
-                .restart-btn { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: ${cText}; backdrop-filter: blur(12px); font-family: 'Pretendard'; border-radius: 8px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-                .restart-btn:hover { background: ${cBorder}; color: white; transform: scale(1.02); border-color: ${cBorder}; }
-                `;
-            }
-
-            const scriptJSON = JSON.stringify(vnScript);
-            const endingsJSON = JSON.stringify(endings);
-
-            return `<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Novel</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { width: 100vw; height: 100vh; overflow: hidden; background: #000; position: relative; }
         
-        #screen-container { width: 100%; height: 100%; position: relative; transition: filter 0.5s ease; }
-        .bg-layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; transition: all 0.5s ease; }
-        
-        .char-container { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-        .char-layer { position: absolute; height: 95%; max-height: 900px; object-fit: contain; transform-origin: bottom center; transition: filter 0.4s ease, opacity 0.4s ease, transform 0.4s ease; }
-        
-        .char1 { bottom: ${c1Y}%; left: 50%; transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}); }
-        .char2 { bottom: ${c2Y}%; left: 50%; transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}); }
-        
-        .speaker-char1 .char2 { filter: brightness(0.4); }
-        .speaker-char2 .char1 { filter: brightness(0.4); }
-        .speaker-none .char1, .speaker-none .char2 { filter: brightness(0.4); }
-        
-        .ui-layer { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none; }
-        .ui-box { width: 100%; position: relative; pointer-events: auto; cursor: pointer; }
-        
-        .text-content { font-size: 26px; color: ${cText}; line-height: 1.6; text-shadow: 0 2px 6px rgba(0,0,0,0.8); font-weight: 500; }
-        .blinking-cursor { display: inline-block; width: 12px; height: 26px; background: ${cText}; vertical-align: middle; margin-left: 8px; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
+        #editor strong { font-weight: 700; }
 
-        .choices-container { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-        .choices-container.active { opacity: 1; pointer-events: auto; }
-        .choice-btn { padding: 16px 40px; font-size: 22px; cursor: pointer; min-width: 400px; text-align: center; outline: none; transition: all 0.2s; }
-
-        .affection-wrapper { position: absolute; top: 30px; right: 30px; z-index: 5; pointer-events: none; }
-        .affection-box { display: flex; align-items: center; gap: 8px; color: white; font-weight: bold; }
-        .heart { color: #f43f5e; font-size: 22px; animation: pulse 2s infinite; text-shadow: 0 0 10px rgba(244,63,94,0.5); }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        
-        .emo-happy.speaker-char1 .char1 { animation: hop1 0.4s ease; filter: drop-shadow(0 0 40px rgba(255,100,100,0.4)); }
-        .emo-happy.speaker-char2 .char2 { animation: hop2 0.4s ease; filter: drop-shadow(0 0 40px rgba(255,100,100,0.4)); }
-        @keyframes hop1 { 0%, 100% { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}) translateY(0); } 50% { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}) translateY(-30px); } }
-        @keyframes hop2 { 0%, 100% { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}) translateY(0); } 50% { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}) translateY(-30px); } }
-        
-        .emo-surprise { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        .emo-surprise.speaker-char1 .char1 { animation: shock1 0.4s ease; }
-        .emo-surprise.speaker-char2 .char2 { animation: shock2 0.4s ease; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-4px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
-        @keyframes shock1 { 0%, 100% { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}); } 50% { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale * 1.05}) scaleY(1.1); } }
-        @keyframes shock2 { 0%, 100% { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}); } 50% { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale * 1.05}) scaleY(1.1); } }
-
-        .emo-angry .bg-layer { filter: brightness(0.3) grayscale(0.6); }
-        .emo-angry.speaker-char1 .char1 { filter: brightness(0.6) contrast(1.3); }
-        .emo-angry.speaker-char2 .char2 { filter: brightness(0.6) contrast(1.3); }
-
-        .emo-sad.speaker-char1 .char1 { transform: translateX(calc(-50% + ${c1X}%)) scale(${c1Scale}) translateY(20px); filter: grayscale(0.4); }
-        .emo-sad.speaker-char2 .char2 { transform: translateX(calc(-50% + ${c2X}%)) scale(${c2Scale}) translateY(20px); filter: grayscale(0.4); }
-
-        #ending-screen { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; background-size: cover; background-position: center; opacity: 0; pointer-events: none; transition: opacity 1.5s ease; text-align: center; }
-        #ending-screen::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 1; }
-        .ending-content { position: relative; z-index: 2; color: white; }
-        .ending-title { font-size: 60px; margin-bottom: 20px; color: ${cBorder}; }
-        .ending-sub { font-size: 24px; font-weight: 500; opacity: 0.9; }
-        
-        .restart-btn { margin-top: 40px; padding: 12px 30px; font-size: 20px; cursor: pointer; transition: all 0.2s; outline: none; }
-
-        ${themeCSS}
     </style>
 </head>
 <body>
 
-    <div id="screen-container">
-        <img src="${bgImg}" class="bg-layer" id="bg">
-        <div class="char-container">
-            <img src="${currentC1Img}" class="char-layer char1" id="char1">
-            <img src="${currentC2Img}" class="char-layer char2" id="char2">
-        </div>
-        
-        ${showAffection ? `
-        <div class="affection-wrapper" id="aff-ui">
-            <div class="affection-box">
-                <span class="heart">❤</span>
-                <span id="aff-text">Affection ${startAffection}</span>
+    <!-- 왼쪽 설정 창 -->
+    <div id="sidebar">
+        <div class="logo">📸 LogSnap</div>
+
+        <!-- 1. 테마 프리셋 -->
+        <div>
+            <div class="section-title">✨ 원클릭 테마</div>
+            <div class="btn-row">
+                <button class="btn-theme" onclick="setTheme('paper')">종이책</button>
+                <button class="btn-theme" onclick="setTheme('dark')">다크모드</button>
+                <button class="btn-theme" onclick="setTheme('trpg')">TRPG</button>
             </div>
         </div>
-        ` : ''}
 
-        <div class="choices-container" id="choices-box"></div>
+        <hr style="border: 0; border-top: 1px solid #f1f3f5;">
 
-        <div class="ui-layer" id="dialog-ui">
-            <div class="ui-box" id="dialog-box" onclick="advanceText()">
-                <div class="name-tag" id="name-tag"></div>
-                <div class="text-content">
-                    <span id="text-node"></span><span class="blinking-cursor" id="cursor"></span>
+        <!-- 2. 폰트 및 텍스트 설정 -->
+        <div>
+            <div class="section-title">✍️ 텍스트 설정</div>
+            
+            <div class="control-group">
+                <label>폰트 (글꼴)</label>
+                <select id="fontFamily">
+                    <optgroup label="명조/바탕체 (감성/소설)">
+                        <option value="'RIDIBatang', serif">리디바탕 (정석)</option>
+                        <option value="'MaruBuri', serif">마루부리 (세련됨)</option>
+                        <option value="'Gowun Batang', serif">고운바탕 (단정함)</option>
+                        <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                    </optgroup>
+                    <optgroup label="고딕/돋움체 (깔끔/대화)">
+                        <option value="'Pretendard-Regular', sans-serif">프리텐다드 (가장 깔끔)</option>
+                        <option value="'Gowun Dodum', sans-serif">고운돋움 (부드러움)</option>
+                        <option value="'Noto Sans KR', sans-serif">노토산스</option>
+                    </optgroup>
+                    <optgroup label="개성/특수">
+                        <option value="'KyoboHandwriting2019', cursive">교보 손글씨 (감성 펜글씨)</option>
+                        <option value="'NeoDunggeunmo', monospace">둥근모 (픽셀/TRPG)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>글자색 선택</label>
+                <input type="color" id="textColor" value="#333333" style="width: 100%; height: 30px; cursor: pointer; border: 1px solid #ced4da; border-radius: 6px; padding: 2px;">
+            </div>
+
+            <div class="control-group">
+                <label>글씨 크기 <span id="val-size">16px</span></label>
+                <input type="range" id="fontSize" min="12" max="40" value="16">
+            </div>
+            <div class="control-group">
+                <label>자간 (글자 간격) <span id="val-space">0px</span></label>
+                <input type="range" id="letterSpacing" min="-3" max="10" value="0" step="0.5">
+            </div>
+            <div class="control-group">
+                <label>줄 간격 <span id="val-line">1.6</span></label>
+                <input type="range" id="lineHeight" min="1" max="3" value="1.6" step="0.1">
+            </div>
+            <div class="control-group">
+                <label>문단 폭 (엔터 간격) <span id="val-pgap">12px</span></label>
+                <input type="range" id="pSpacing" min="0" max="50" value="12" step="1">
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f3f5;">
+
+        <!-- 3. 꾸미기 (화자분리, 형광펜) -->
+        <div>
+            <div class="section-title">🎨 꾸미기 & 화자 분리</div>
+            <div class="control-group">
+                <button class="btn-action" onclick="applySmartSpeaker()">🤖 스마트 화자 분리 (이름 굵게)</button>
+                <p style="font-size:11px; color:#adb5bd; margin:2px 0 10px 0; text-align:center;">'이름 : 대사' 형식을 자동으로 분리합니다.</p>
+            </div>
+            <div class="control-group">
+                <div class="btn-row">
+                    <input type="color" id="hlColor" value="#ffeaa7" style="width: 38px; height: 38px; padding: 0; cursor: pointer; border: 1px solid #ced4da; border-radius: 6px;">
+                    <button class="btn-hl" onclick="applyHighlight()">형광펜 칠하기</button>
+                    <button class="btn-clear" onclick="removeFormat()">지우기</button>
                 </div>
             </div>
         </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f3f5;">
+
+        <!-- 4. 배경 및 여백 -->
+        <div>
+            <div class="section-title">🖼️ 배경 & 여백</div>
+            <div class="control-group">
+                <label>여백 넓히기 <span id="val-padding">60px</span></label>
+                <input type="range" id="bgPadding" min="20" max="150" value="60" step="5">
+            </div>
+            <div class="control-group">
+                <label>배경색 선택</label>
+                <input type="color" id="bgColor" value="#ffffff" style="width: 100%; height: 30px; cursor: pointer; border: 1px solid #ced4da; border-radius: 6px; padding: 2px;">
+            </div>
+            <div class="control-group">
+                <label>배경 이미지 업로드</label>
+                <input type="file" id="bgImage" accept="image/*">
+            </div>
+        </div>
+
+        <!-- 5. 내보내기 -->
+        <div style="margin-top: 10px;">
+            <button class="btn-primary" style="width:100%;" onclick="copyToClipboard()">📋 클립보드에 복사 (Ctrl+V용)</button>
+            <button class="btn-secondary" style="width:100%; margin-top:8px;" onclick="downloadImage()">💾 고화질 이미지 저장</button>
+        </div>
     </div>
 
-    <div id="ending-screen">
-        <div class="ending-content">
-            <h1 class="ending-title" id="end-title"></h1>
-            <p class="ending-sub" id="end-sub"></p>
-            <button class="restart-btn" onclick="restartGame()">다시 시작하기</button>
+    <!-- 오른쪽 도화지 창 -->
+    <div id="main">
+        <div id="capture-wrapper">
+            <div id="editor" contenteditable="true">용사 : 이 검은... 전설의 성검?!
+마왕 : 크큭, 겨우 그런 장난감으로 나를 이길 수 있을 거라 생각하나?
+
+여기에 로그를 복사해서 붙여넣으세요.
+스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다!
+
+원하는 부분을 드래그하고 형광펜을 칠할 수도 있어요.
+여백과 배경을 자유롭게 꾸며보세요.</div>
         </div>
     </div>
 
     <script>
-        const scriptData = ${scriptJSON};
-        const endings = ${endingsJSON};
-        
-        let currentStep = ${startStep};
-        let affection = ${startAffection};
-        
-        window.getCurrentState = () => ({ step: currentStep, affection: affection });
-        
-        let typeInterval;
-        let isTyping = false;
-        let currentFullText = "";
+        const editor = document.getElementById('editor');
+        const root = document.documentElement;
+        const captureWrapper = document.getElementById('capture-wrapper');
 
-        const screenContainer = document.getElementById('screen-container');
-        const textNode = document.getElementById('text-node');
-        const nameTag = document.getElementById('name-tag');
-        const choicesBox = document.getElementById('choices-box');
-        const affText = document.getElementById('aff-text');
-        const cursor = document.getElementById('cursor');
-        
-        const dialogUI = document.getElementById('dialog-ui');
-        const affUI = document.getElementById('aff-ui');
-        const endingScreen = document.getElementById('ending-screen');
+        // 1. 슬라이더 실시간 적용
+        const sliders = [
+            { id: 'fontSize', style: 'fontSize', unit: 'px', target: editor },
+            { id: 'letterSpacing', style: 'letterSpacing', unit: 'px', target: editor },
+            { id: 'lineHeight', style: 'lineHeight', unit: '', target: editor }
+        ];
 
-        function updateAffection(amount) {
-            affection += amount;
-            if (affText) {
-                affText.innerText = 'Affection ' + affection;
-                const heart = document.querySelector('.heart');
-                if (heart) {
-                    heart.style.animation = 'none'; heart.offsetHeight; heart.style.animation = 'pulse 2s infinite';
-                    heart.style.color = amount > 0 ? '#fb7185' : '#9ca3af';
-                    setTimeout(() => heart.style.color = '#f43f5e', 500);
-                }
-            }
-        }
-
-        function applyEmotion(emotion, speaker) {
-            screenContainer.className = 'speaker-' + (speaker || 'none');
-            void screenContainer.offsetWidth;
-            if(emotion && emotion !== 'normal') screenContainer.classList.add('emo-' + emotion);
-        }
-
-        function typeText(text) {
-            clearInterval(typeInterval);
-            currentFullText = text;
-            textNode.innerHTML = "";
-            isTyping = true;
-            let i = 0;
-            
-            typeInterval = setInterval(() => {
-                if (i < text.length) {
-                    textNode.innerHTML += text.charAt(i) === '\\n' ? '<br>' : text.charAt(i);
-                    i++;
-                } else {
-                    finishTyping();
-                }
-            }, 35);
-        }
-
-        function finishTyping() {
-            clearInterval(typeInterval);
-            textNode.innerHTML = currentFullText.replace(/\\n/g, '<br>');
-            isTyping = false;
-            
-            const scene = scriptData[currentStep];
-            if (scene && scene.choices && scene.choices.length > 0) {
-                showChoices(scene.choices);
-            } else {
-                cursor.style.display = 'inline-block';
-            }
-        }
-
-        function showChoices(choices) {
-            cursor.style.display = 'none';
-            choicesBox.innerHTML = '';
-            choices.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = 'choice-btn';
-                btn.innerText = c.text;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    updateAffection(c.aff);
-                    choicesBox.classList.remove('active');
-                    currentStep++;
-                    playScene();
-                };
-                choicesBox.appendChild(btn);
+        sliders.forEach(s => {
+            document.getElementById(s.id).addEventListener('input', (e) => {
+                s.target.style[s.style] = e.target.value + s.unit;
+                document.getElementById(`val-${s.id.replace(/([A-Z])/g, '-$1').toLowerCase().split('-')[1] || s.id}`).innerText = e.target.value + s.unit;
             });
-            choicesBox.classList.add('active');
-        }
+        });
 
-        function advanceText() {
-            if (choicesBox.classList.contains('active')) return;
-            if (isTyping) finishTyping();
-            else { currentStep++; playScene(); }
-        }
+        // 문단 간격 & 여백 적용
+        document.getElementById('pSpacing').addEventListener('input', (e) => {
+            root.style.setProperty('--p-gap', e.target.value + 'px');
+            document.getElementById('val-pgap').innerText = e.target.value + 'px';
+        });
 
-        function playScene() {
-            if (currentStep >= scriptData.length) {
-                playEnding();
-                return;
+        document.getElementById('bgPadding').addEventListener('input', (e) => {
+            root.style.setProperty('--padding', e.target.value + 'px');
+            document.getElementById('val-padding').innerText = e.target.value + 'px';
+        });
+
+        // 2. 폰트 변경
+        document.getElementById('fontFamily').addEventListener('change', (e) => {
+            editor.style.fontFamily = e.target.value;
+        });
+
+        // 3. 색상 변경 (글자색, 배경색, 배경 이미지)
+        document.getElementById('textColor').addEventListener('input', (e) => {
+            root.style.setProperty('--text-color', e.target.value);
+        });
+
+        document.getElementById('bgColor').addEventListener('input', (e) => {
+            root.style.setProperty('--bg-color', e.target.value);
+            captureWrapper.style.backgroundImage = 'none'; // 색상 선택시 이미지 제거
+        });
+
+        document.getElementById('bgImage').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    captureWrapper.style.backgroundImage = `url(${event.target.result})`;
+                }
+                reader.readAsDataURL(file);
             }
-            cursor.style.display = 'inline-block';
-            const scene = scriptData[currentStep];
-            
-            if (scene.char1_img) document.getElementById('char1').src = scene.char1_img;
-            if (scene.char2_img) document.getElementById('char2').src = scene.char2_img;
+        });
 
-            nameTag.innerText = scene.name;
-            applyEmotion(scene.emotion, scene.speaker);
-            typeText(scene.text);
+        // 4. 형광펜 기능
+        function applyHighlight() {
+            const color = document.getElementById('hlColor').value;
+            document.execCommand('backColor', false, color);
+        }
+        function removeFormat() {
+            document.execCommand('backColor', false, 'transparent');
+            document.execCommand('bold', false, null);
         }
 
-        function playEnding() {
-            dialogUI.style.display = 'none';
-            if (affUI) affUI.style.display = 'none';
-            document.getElementById('char1').style.display = 'none';
-            document.getElementById('char2').style.display = 'none';
-            screenContainer.className = ''; 
+        // 5. 스마트 화자 분리
+        function applySmartSpeaker() {
+            const textLines = editor.innerText.split('\n');
+            const newHtml = textLines.map(line => {
+                const match = line.match(/^(.*?)(:|：)(.*)$/);
+                if (match) {
+                    return `<strong>${match[1]}</strong>${match[2]}${match[3]}`;
+                }
+                return line;
+            }).join('<br>');
             
-            const finalScene = affection >= endings.threshold ? endings.happy : endings.bad;
-            
-            endingScreen.style.backgroundImage = \`url('\${finalScene.bg}')\`;
-            document.getElementById('end-title').innerText = finalScene.title;
-            document.getElementById('end-sub').innerHTML = finalScene.sub.replace(/\\n/g, '<br>');
-            
-            endingScreen.style.opacity = '1';
-            endingScreen.style.pointerEvents = 'auto';
+            editor.innerHTML = newHtml;
         }
 
-        function restartGame() {
-            // 변수 초기화
-            currentStep = 0;
-            affection = 50;
-            updateAffection(0);
-            
-            // 엔딩 화면 숨기기
-            endingScreen.style.opacity = '0';
-            endingScreen.style.pointerEvents = 'none';
-            
-            // UI 및 캐릭터 다시 보이기
-            dialogUI.style.display = 'flex';
-            if (affUI) affUI.style.display = '';
-            document.getElementById('char1').style.display = '';
-            document.getElementById('char2').style.display = '';
-            
-            // 캐릭터 이미지를 기본 이미지로 리셋
-            document.getElementById('char1').src = "${defaultC1Img}";
-            document.getElementById('char2').src = "${defaultC2Img}";
-            
-            // 첫 씬 재생
-            playScene();
+        // 6. 원클릭 테마 프리셋 (색상 피커 동기화 포함)
+        function setTheme(type) {
+            captureWrapper.style.backgroundImage = 'none';
+            const textColorInput = document.getElementById('textColor');
+            const bgColorInput = document.getElementById('bgColor');
+            const fontSelect = document.getElementById('fontFamily');
+
+            if (type === 'paper') {
+                root.style.setProperty('--bg-color', '#fdfbf7'); 
+                root.style.setProperty('--text-color', '#3e3a39');
+                textColorInput.value = '#3e3a39';
+                bgColorInput.value = '#fdfbf7';
+                fontSelect.value = "'RIDIBatang', serif";
+                editor.style.fontFamily = "'RIDIBatang', serif";
+            } else if (type === 'dark') {
+                root.style.setProperty('--bg-color', '#212529'); 
+                root.style.setProperty('--text-color', '#f8f9fa');
+                textColorInput.value = '#f8f9fa';
+                bgColorInput.value = '#212529';
+                fontSelect.value = "'Pretendard-Regular', sans-serif";
+                editor.style.fontFamily = "'Pretendard-Regular', sans-serif";
+            } else if (type === 'trpg') {
+                root.style.setProperty('--bg-color', '#000000'); 
+                root.style.setProperty('--text-color', '#39ff14'); 
+                textColorInput.value = '#39ff14';
+                bgColorInput.value = '#000000';
+                fontSelect.value = "'NeoDunggeunmo', monospace";
+                editor.style.fontFamily = "'NeoDunggeunmo', monospace";
+            }
         }
 
-        playScene();
-    <\/script>
-</body>
-</html>`;
-        }
+        // 7. 내보내기 공통 옵션
+        const getCanvasOptions = () => ({
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: null 
+        });
 
-        let timeout = null;
-        function debouncedUpdate() {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                const iframe = document.getElementById('preview');
-                try {
-                    if (iframe.contentWindow && iframe.contentWindow.getCurrentState) {
-                        const state = iframe.contentWindow.getCurrentState();
-                        if (state.step >= vnScript.length) state.step = Math.max(0, vnScript.length - 1);
-                        previewState = state;
+        // 클립보드 복사
+        function copyToClipboard() {
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 복사 중...";
+            
+            html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
+                canvas.toBlob(blob => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        navigator.clipboard.write([item]).then(() => {
+                            btn.innerText = "✅ 복사 완료! (Ctrl+V)";
+                            setTimeout(() => btn.innerText = originalText, 2000);
+                        });
+                    } catch (err) {
+                        alert("사용 중인 브라우저가 이미지 클립보드 복사를 지원하지 않습니다. 이미지 저장을 이용해주세요.");
+                        btn.innerText = originalText;
                     }
-                } catch(e) { }
-
-                iframe.srcdoc = generateCode(previewState.step, previewState.affection);
-            }, 300);
-        }
-
-        function copyHTML() {
-            const finalCode = generateCode(0, 50);
-            navigator.clipboard.writeText(finalCode).then(() => {
-                showToast('✅ 코드가 복사되었습니다!');
-            }).catch(() => {
-                const ta = document.createElement("textarea"); ta.value = finalCode;
-                document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-                showToast('✅ 코드가 복사되었습니다!');
-            });
-        }
-
-        function saveAsHTML() {
-            const finalCode = generateCode(0, 50);
-            const blob = new Blob([finalCode], { type: 'text/html' });
-            const link = document.createElement('a');
-            link.download = `visual_novel_pro.html`;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            showToast('💾 HTML 파일이 저장되었습니다!');
-        }
-
-        let isRecording = false;
-        function recordGIF() {
-            if (isRecording) return;
-            const btn = document.getElementById('btn-gif');
-            const iframe = document.getElementById('preview');
-            const target = iframe.contentDocument.body;
-            
-            isRecording = true;
-            let frames = [];
-            let elapsed = 0;
-            const duration = 15000; // 녹화 시간 15초로 변경
-            const intervalMs = 250;
-
-            btn.innerText = "🔴 녹화 중...";
-            btn.classList.replace('bg-rose-600', 'bg-red-600');
-            showToast('녹화 시작! 15초 동안 화면을 클릭해 대사를 넘겨주세요.');
-
-            iframe.contentWindow.focus();
-
-            const captureInterval = setInterval(() => {
-                window.htmlToImage.toCanvas(target, { backgroundColor: '#000' }).then(canvas => {
-                    frames.push(canvas.toDataURL('image/jpeg', 0.6));
                 });
-                
-                elapsed += intervalMs;
-                if (elapsed >= duration) {
-                    clearInterval(captureInterval);
-                    finishRecording(frames, btn);
-                }
-            }, intervalMs);
-        }
-
-        function finishRecording(frames, btn) {
-            btn.innerText = "⏳ 렌더링 중...";
-            showToast('캡처 완료! GIF 변환 중입니다. (시간이 조금 걸릴 수 있습니다)');
-
-            gifshot.createGIF({
-                images: frames,
-                gifWidth: 800,
-                gifHeight: 450,
-                interval: 0.25,
-                numWorkers: 2
-            }, function (obj) {
-                if (!obj.error) {
-                    const link = document.createElement('a');
-                    link.download = 'visual_novel.gif';
-                    link.href = obj.image;
-                    link.click();
-                    showToast('🎥 GIF 저장 완료!');
-                } else {
-                    alert('GIF 생성 오류');
-                }
-                btn.innerText = "GIF 녹화";
-                btn.classList.replace('bg-red-600', 'bg-rose-600');
-                isRecording = false;
             });
         }
 
-        window.onload = () => {
-            renderScript();
-            debouncedUpdate();
-        };
+        // 고화질 이미지 저장
+        function downloadImage() {
+            const btn = document.querySelector('.btn-secondary');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 저장 중...";
+            
+            html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'LogSnap_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                btn.innerText = originalText;
+            });
+        }
     </script>
 </body>
 </html>
