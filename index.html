@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -93,7 +94,7 @@
             outline: none; min-height: 300px; font-size: 16px;
             line-height: 1.6; letter-spacing: 0px; word-break: keep-all;
             color: var(--text-color);
-            font-family: 'Pretendard-Regular', 'Apple SD Gothic Neo', sans-serif; /* 기본 폰트를 프리텐다드로 설정 */
+            font-family: 'Pretendard-Regular', 'Apple SD Gothic Neo', sans-serif;
             transition: color 0.3s;
         }
         #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
@@ -147,8 +148,8 @@
             </div>
 
             <div class="control-group">
-                <label>글자색 선택</label>
-                <input type="color" id="textColor" value="#333333" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px;">
+                <label>전체 글자색</label>
+                <input type="color" id="textColor" value="#333333" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px; cursor: pointer;">
             </div>
 
             <div class="control-group">
@@ -171,18 +172,30 @@
 
         <hr style="border: 0; border-top: 1px solid #f1f3f5;">
 
-        <!-- 3. 꾸미기 (화자분리, 형광펜) -->
+        <!-- 3. 꾸미기 (화자분리, 굵게, 부분글자색, 형광펜) -->
         <div>
             <div class="section-title">🎨 꾸미기 & 화자 분리</div>
-            <div class="control-group">
+            
+            <div class="control-group" style="margin-bottom: 20px;">
                 <button class="btn-action" onclick="applySmartSpeaker()">🤖 스마트 화자 분리 (이름 굵게)</button>
-                <p style="font-size:11px; color:#adb5bd; margin:2px 0 10px 0; text-align:center;">'이름 : 대사' 형식을 자동으로 분리합니다.</p>
+                <p style="font-size:11px; color:#adb5bd; margin:2px 0 0 0; text-align:center;">'이름 : 대사' 형식을 자동으로 분리합니다.</p>
             </div>
+
             <div class="control-group">
+                <label>✨ 부분 꾸미기 (글자 드래그 후 클릭!)</label>
+                
+                <!-- 굵게 & 부분 글자색 -->
+                <div class="btn-row" style="margin-bottom: 4px;">
+                    <button class="btn-action" style="flex: 0.4; font-weight: 900; font-size: 15px;" onclick="applyBold()" title="굵게">B</button>
+                    <input type="color" id="partColor" value="#e03131" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
+                    <button class="btn-action" onclick="applyPartColor()">글자색 적용</button>
+                </div>
+
+                <!-- 형광펜 & 지우기 -->
                 <div class="btn-row">
-                    <input type="color" id="hlColor" value="#ffeaa7" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px;">
+                    <input type="color" id="hlColor" value="#ffeaa7" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
                     <button class="btn-hl" onclick="applyHighlight()">형광펜 칠하기</button>
-                    <button class="btn-clear" onclick="removeFormat()">지우기</button>
+                    <button class="btn-clear" onclick="removeFormat()">서식 지우기</button>
                 </div>
             </div>
         </div>
@@ -198,7 +211,7 @@
             </div>
             <div class="control-group">
                 <label>배경색 선택</label>
-                <input type="color" id="bgColor" value="#ffffff" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px;">
+                <input type="color" id="bgColor" value="#ffffff" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px; cursor: pointer;">
             </div>
             <div class="control-group">
                 <label>배경 이미지 업로드</label>
@@ -221,7 +234,10 @@
 노먼 : ......그래. 이 손은 고운 적이 없어.
 
 여기에 로그를 복사해서 붙여넣으세요.
-스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다!</div>
+스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다!
+
+원하는 부분을 드래그하고 [B]를 누르면 굵어지고,
+글자색과 형광펜도 자유자재로 칠할 수 있습니다.</div>
         </div>
     </div>
 
@@ -230,21 +246,22 @@
         const root = document.documentElement;
         const captureWrapper = document.getElementById('capture-wrapper');
 
-        // 슬라이더 실시간 적용
-        const sliders = [
-            { id: 'fontSize', style: 'fontSize', unit: 'px', target: editor },
-            { id: 'letterSpacing', style: 'letterSpacing', unit: 'px', target: editor },
-            { id: 'lineHeight', style: 'lineHeight', unit: '', target: editor }
-        ];
-
-        sliders.forEach(s => {
-            document.getElementById(s.id).addEventListener('input', (e) => {
-                s.target.style[s.style] = e.target.value + s.unit;
-                document.getElementById(`val-${s.id.replace(/([A-Z])/g, '-$1').toLowerCase().split('-')[1] || s.id}`).innerText = e.target.value + s.unit;
-            });
+        // 1. 슬라이더 실시간 적용 (오류 완벽 수정!)
+        document.getElementById('fontSize').addEventListener('input', (e) => {
+            editor.style.fontSize = e.target.value + 'px';
+            document.getElementById('val-size').innerText = e.target.value + 'px';
         });
 
-        // 문단 간격 & 여백 적용
+        document.getElementById('letterSpacing').addEventListener('input', (e) => {
+            editor.style.letterSpacing = e.target.value + 'px';
+            document.getElementById('val-space').innerText = e.target.value + 'px';
+        });
+
+        document.getElementById('lineHeight').addEventListener('input', (e) => {
+            editor.style.lineHeight = e.target.value;
+            document.getElementById('val-line').innerText = e.target.value;
+        });
+
         document.getElementById('pSpacing').addEventListener('input', (e) => {
             root.style.setProperty('--p-gap', e.target.value + 'px');
             document.getElementById('val-pgap').innerText = e.target.value + 'px';
@@ -255,12 +272,11 @@
             document.getElementById('val-padding').innerText = e.target.value + 'px';
         });
 
-        // 폰트 변경
+        // 2. 폰트 및 전체 색상 변경
         document.getElementById('fontFamily').addEventListener('change', (e) => {
             editor.style.fontFamily = e.target.value;
         });
 
-        // 색상 변경
         document.getElementById('textColor').addEventListener('input', (e) => {
             root.style.setProperty('--text-color', e.target.value);
         });
@@ -281,17 +297,32 @@
             }
         });
 
-        // 형광펜 기능
+        // 3. 부분 꾸미기 기능 (굵게, 글자색, 형광펜, 지우기)
+        
+        // 굵게
+        function applyBold() {
+            document.execCommand('bold', false, null);
+        }
+
+        // 부분 글자색
+        function applyPartColor() {
+            const color = document.getElementById('partColor').value;
+            document.execCommand('foreColor', false, color);
+        }
+
+        // 형광펜 (배경색)
         function applyHighlight() {
             const color = document.getElementById('hlColor').value;
             document.execCommand('backColor', false, color);
         }
+
+        // 서식 지우기 (굵게, 색상, 형광펜 초기화)
         function removeFormat() {
+            document.execCommand('removeFormat', false, null);
             document.execCommand('backColor', false, 'transparent');
-            document.execCommand('bold', false, null);
         }
 
-        // 스마트 화자 분리
+        // 4. 스마트 화자 분리
         function applySmartSpeaker() {
             const textLines = editor.innerText.split('\n');
             const newHtml = textLines.map(line => {
@@ -304,7 +335,7 @@
             editor.innerHTML = newHtml;
         }
 
-        // 원클릭 테마 프리셋
+        // 5. 원클릭 테마 프리셋
         function setTheme(type) {
             captureWrapper.style.backgroundImage = 'none';
             const textColorInput = document.getElementById('textColor');
@@ -329,10 +360,9 @@
             }
         }
 
-        // 캡처 공통 옵션
+        // 6. 내보내기 로직
         const getCanvasOptions = () => ({ scale: 2, useCORS: true, backgroundColor: null });
 
-        // 클립보드 복사
         function copyToClipboard() {
             const btn = document.querySelector('.btn-primary');
             const originalText = btn.innerText;
@@ -353,7 +383,6 @@
             });
         }
 
-        // 고화질 이미지 저장
         function downloadImage() {
             const btn = document.querySelector('.btn-secondary');
             const originalText = btn.innerText;
