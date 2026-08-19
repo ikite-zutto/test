@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 화면비율 맞춤 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LogSnap - 로그 발췌 메이커</title>
+    <!-- html2canvas 최신 안정화 버전 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -78,8 +79,9 @@
         .btn-hl { background: #ffeaa7; color: #000; flex: 1; }
         .btn-clear { background: #f1f3f5; color: #495057; }
         
-        .btn-primary { background: #1c7ed6; color: #fff; font-size: 15px; padding: 14px; margin-top: 10px; }
+        .btn-primary { background: #1c7ed6; color: #fff; font-size: 15px; padding: 14px; }
         .btn-secondary { background: #343a40; color: #fff; font-size: 15px; padding: 14px; }
+        .btn-mobile { background: #fff; color: #e03131; font-size: 16px; padding: 14px; border: 2px solid #e03131; font-weight: bold; }
 
         /* 오른쪽 미리보기 패널 */
         #main { 
@@ -109,15 +111,15 @@
         #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
         #editor strong { font-weight: 700; }
 
-        /* 모바일 저장용 팝업 모달 스타일 */
+        /* 모바일 저장용 팝업 모달 스타일 (절대 안 씹히게 z-index 최대로 올림) */
         #mobileModal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 9999; flex-direction: column;
+            background: rgba(0,0,0,0.9); z-index: 999999; flex-direction: column;
             justify-content: center; align-items: center; padding: 20px;
         }
         #mobileModalContent {
             background: #fff; padding: 20px; border-radius: 12px;
-            text-align: center; max-width: 100%; max-height: 90vh;
+            text-align: center; width: 100%; max-width: 500px; max-height: 90vh;
             display: flex; flex-direction: column; gap: 15px;
         }
         #mobileResultImage {
@@ -208,15 +210,11 @@
 
             <div class="control-group">
                 <label>✨ 부분 꾸미기 (글자 드래그 후 클릭!)</label>
-                
-                <!-- 굵게 & 부분 글자색 -->
                 <div class="btn-row" style="margin-bottom: 4px;">
                     <button class="btn-action" style="flex: 0.4; font-weight: 900; font-size: 15px;" onclick="applyBold()" title="굵게">B</button>
                     <input type="color" id="partColor" value="#e03131" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
                     <button class="btn-action" onclick="applyPartColor()">글자색 적용</button>
                 </div>
-
-                <!-- 형광펜 & 지우기 -->
                 <div class="btn-row">
                     <input type="color" id="hlColor" value="#ffeaa7" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
                     <button class="btn-hl" onclick="applyHighlight()">형광펜 칠하기</button>
@@ -244,35 +242,33 @@
             </div>
         </div>
 
-        <!-- 5. 내보내기 -->
-        <div style="margin-top: 10px;">
-            <button class="btn-primary" style="width:100%;" onclick="copyToClipboard()">📋 클립보드에 복사 (PC 추천)</button>
-            <button class="btn-secondary" style="width:100%; margin-top:8px;" onclick="downloadImage()">💾 갤러리에 이미지 저장</button>
+        <!-- 5. 내보내기 (버튼을 아예 명확히 분리했습니다!) -->
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <button id="btn-mobile" class="btn-mobile" onclick="openMobileModal()">📱 모바일 전용 저장 (팝업 띄우기)</button>
+            <button class="btn-secondary" onclick="downloadImagePC()">💾 PC 전용 이미지 저장 (바로 다운로드)</button>
+            <button class="btn-primary" onclick="copyToClipboard()">📋 클립보드에 복사 (PC 추천)</button>
         </div>
     </div>
 
     <!-- 오른쪽 도화지 창 -->
     <div id="main">
         <div id="capture-wrapper">
-            <div id="editor" contenteditable="true">모바일에서도 이제 완벽하게 저장됩니다! 🎉
+            <div id="editor" contenteditable="true">폰에서 안 뜨는 오류를 해결했습니다!! 😭
 
 여기에 로그를 복사해서 붙여넣으세요.
-스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다.
-
-원하는 부분을 드래그하고 [B]를 누르면 굵어지고,
-글자색과 형광펜도 자유자재로 칠할 수 있습니다.</div>
+폰에서는 좌측 하단의 [📱 모바일 전용 저장] 버튼을 누르시면 됩니다!</div>
         </div>
     </div>
 
     <!-- 📱 모바일 강제 저장용 팝업 모달 -->
     <div id="mobileModal">
         <div id="mobileModalContent">
-            <h3 style="margin: 0; color: #e03131; font-size: 16px;">📱 모바일 저장 안내</h3>
-            <p style="margin: 0; font-size: 14px; color: #495057;">아래 이미지를 <strong>꾹~ 눌러서 '사진 앱에 저장'</strong>을 선택해주세요!</p>
+            <h3 style="margin: 0; color: #e03131; font-size: 18px; font-weight: bold;">📱 모바일 저장 안내</h3>
+            <p style="margin: 0; font-size: 14px; color: #495057;">아래 완성된 이미지를 <strong>꾹~ 눌러서 '사진 앱에 저장'</strong> 해주세요!</p>
             
             <img id="mobileResultImage" src="" alt="완성된 발췌 이미지">
             
-            <button class="btn-secondary" onclick="closeModal()" style="width: 100%; font-size: 16px;">닫기</button>
+            <button class="btn-secondary" onclick="closeModal()" style="width: 100%; font-size: 16px; padding: 12px;">닫기</button>
         </div>
     </div>
 
@@ -281,7 +277,7 @@
         const root = document.documentElement;
         const captureWrapper = document.getElementById('capture-wrapper');
 
-        // 1. 슬라이더 실시간 적용
+        // 슬라이더 실시간 적용
         document.getElementById('fontSize').addEventListener('input', (e) => {
             editor.style.fontSize = e.target.value + 'px';
             document.getElementById('val-size').innerText = e.target.value + 'px';
@@ -303,7 +299,7 @@
             document.getElementById('val-padding').innerText = e.target.value + 'px';
         });
 
-        // 2. 폰트 및 전체 색상 변경
+        // 폰트 및 전체 색상 변경
         document.getElementById('fontFamily').addEventListener('change', (e) => {
             editor.style.fontFamily = e.target.value;
         });
@@ -325,7 +321,7 @@
             }
         });
 
-        // 3. 부분 꾸미기 기능
+        // 부분 꾸미기 기능
         function applyBold() { document.execCommand('bold', false, null); }
         function applyPartColor() {
             const color = document.getElementById('partColor').value;
@@ -340,7 +336,7 @@
             document.execCommand('backColor', false, 'transparent');
         }
 
-        // 4. 스마트 화자 분리
+        // 스마트 화자 분리
         function applySmartSpeaker() {
             const textLines = editor.innerText.split('\n');
             const newHtml = textLines.map(line => {
@@ -353,7 +349,7 @@
             editor.innerHTML = newHtml;
         }
 
-        // 5. 원클릭 테마 프리셋
+        // 원클릭 테마 프리셋
         function setTheme(type) {
             captureWrapper.style.backgroundImage = 'none';
             const textColorInput = document.getElementById('textColor');
@@ -378,13 +374,72 @@
             }
         }
 
-        // 6. 캡처 및 내보내기 로직 (모바일 호환성 패치)
-        const getCanvasOptions = () => ({ scale: 2, useCORS: true, backgroundColor: null });
+        // --------------------------------------------------------
+        // 캡처 및 내보내기 로직 (에러 방지 처리 완료)
+        // --------------------------------------------------------
+        
+        // 화질 옵션 (모바일에서 뻗지 않도록 scale 조정)
+        const getCanvasOptions = () => ({ 
+            scale: window.devicePixelRatio || 2, 
+            useCORS: true, 
+            backgroundColor: null,
+            logging: false
+        });
 
+        // 1. [모바일 전용] 팝업 띄우기
+        function openMobileModal() {
+            const btn = document.getElementById('btn-mobile');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 팝업 생성 중...";
+            
+            // 모바일 캡처 버그(화면 잘림 현상) 방지를 위해 맨 위로 스크롤
+            window.scrollTo(0, 0);
+
+            html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
+                const dataUrl = canvas.toDataURL('image/png');
+                document.getElementById('mobileResultImage').src = dataUrl;
+                document.getElementById('mobileModal').style.display = 'flex';
+                btn.innerText = originalText;
+            }).catch(err => {
+                alert("이미지 생성 중 오류가 발생했습니다 ㅠㅠ 다른 브라우저(사파리/크롬)로 열어보세요!\n상세오류: " + err);
+                btn.innerText = originalText;
+            });
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('mobileModal').style.display = 'none';
+            document.getElementById('mobileResultImage').src = '';
+        }
+
+        // 2. [PC 전용] 바로 다운로드
+        function downloadImagePC() {
+            const btn = document.querySelector('.btn-secondary');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 다운로드 중...";
+            
+            window.scrollTo(0, 0);
+
+            html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'LogSnap_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                btn.innerText = originalText;
+            }).catch(err => {
+                alert("오류가 발생했습니다: " + err);
+                btn.innerText = originalText;
+            });
+        }
+
+        // 3. 클립보드 복사
         function copyToClipboard() {
             const btn = document.querySelector('.btn-primary');
             const originalText = btn.innerText;
             btn.innerText = "⏳ 복사 중...";
+            
+            window.scrollTo(0, 0);
+
             html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
                 canvas.toBlob(blob => {
                     try {
@@ -394,43 +449,11 @@
                             setTimeout(() => btn.innerText = originalText, 2000);
                         });
                     } catch (err) {
-                        alert("모바일 브라우저에서는 클립보드 복사가 차단될 수 있습니다. 아래 '이미지 저장'을 이용해주세요.");
+                        alert("현재 브라우저에서는 클립보드 복사를 지원하지 않습니다. 이미지 저장을 이용해주세요.");
                         btn.innerText = originalText;
                     }
                 });
             });
-        }
-
-        function downloadImage() {
-            const btn = document.querySelector('.btn-secondary');
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ 이미지 굽는 중...";
-            
-            html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
-                const dataUrl = canvas.toDataURL('image/png');
-                
-                // 모바일 환경인지 체크 (스마트폰, 태블릿 등)
-                const isMobile = /iPhone|iPad|iPod|Android|Kakao|Twitter|Instagram/i.test(navigator.userAgent);
-
-                if (isMobile) {
-                    // 모바일이면 모달을 띄워서 꾹 눌러서 저장하게 유도
-                    document.getElementById('mobileResultImage').src = dataUrl;
-                    document.getElementById('mobileModal').style.display = 'flex';
-                } else {
-                    // PC면 기존처럼 바로 다운로드
-                    const link = document.createElement('a');
-                    link.download = 'LogSnap_' + Date.now() + '.png';
-                    link.href = dataUrl;
-                    link.click();
-                }
-                btn.innerText = originalText;
-            });
-        }
-
-        // 모달 닫기
-        function closeModal() {
-            document.getElementById('mobileModal').style.display = 'none';
-            document.getElementById('mobileResultImage').src = '';
         }
     </script>
 </body>
