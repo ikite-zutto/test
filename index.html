@@ -1,8 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 화면비율 맞춤 -->
     <title>LogSnap - 로그 발췌 메이커</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
@@ -37,12 +37,21 @@
             color: #333;
         }
 
+        /* 반응형: 모바일에서는 세로로 배치되게 변경 */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; }
+            #sidebar { width: 100% !important; border-right: none; border-bottom: 2px solid #dee2e6; }
+            #main { padding: 20px !important; }
+            #capture-wrapper { min-width: 100% !important; padding: 30px !important; }
+        }
+
         /* 왼쪽 설정 패널 */
         #sidebar { 
             width: 320px; background: #fff; padding: 25px; 
             box-shadow: 2px 0 15px rgba(0,0,0,0.03); 
             display: flex; flex-direction: column; gap: 20px; 
             overflow-y: auto; border-right: 1px solid #e9ecef;
+            flex-shrink: 0;
         }
         #sidebar::-webkit-scrollbar { width: 6px; }
         #sidebar::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
@@ -99,6 +108,22 @@
         }
         #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
         #editor strong { font-weight: 700; }
+
+        /* 모바일 저장용 팝업 모달 스타일 */
+        #mobileModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 9999; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        #mobileModalContent {
+            background: #fff; padding: 20px; border-radius: 12px;
+            text-align: center; max-width: 100%; max-height: 90vh;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        #mobileResultImage {
+            max-width: 100%; max-height: 60vh; object-fit: contain;
+            border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -221,23 +246,33 @@
 
         <!-- 5. 내보내기 -->
         <div style="margin-top: 10px;">
-            <button class="btn-primary" style="width:100%;" onclick="copyToClipboard()">📋 클립보드에 복사 (Ctrl+V용)</button>
-            <button class="btn-secondary" style="width:100%; margin-top:8px;" onclick="downloadImage()">💾 고화질 이미지 저장</button>
+            <button class="btn-primary" style="width:100%;" onclick="copyToClipboard()">📋 클립보드에 복사 (PC 추천)</button>
+            <button class="btn-secondary" style="width:100%; margin-top:8px;" onclick="downloadImage()">💾 갤러리에 이미지 저장</button>
         </div>
     </div>
 
     <!-- 오른쪽 도화지 창 -->
     <div id="main">
         <div id="capture-wrapper">
-            <div id="editor" contenteditable="true">노먼의 손이 허공에서 멈추었다. 세라핀이 고개를 돌린 방향, 그녀의 뒷통수에 달빛이 내려앉아 백색 곱슬머리를 은빛으로 물들이고 있었다.
-
-노먼 : ......그래. 이 손은 고운 적이 없어.
+            <div id="editor" contenteditable="true">모바일에서도 이제 완벽하게 저장됩니다! 🎉
 
 여기에 로그를 복사해서 붙여넣으세요.
-스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다!
+스마트 화자 분리 버튼을 누르면 이름만 굵게 변합니다.
 
 원하는 부분을 드래그하고 [B]를 누르면 굵어지고,
 글자색과 형광펜도 자유자재로 칠할 수 있습니다.</div>
+        </div>
+    </div>
+
+    <!-- 📱 모바일 강제 저장용 팝업 모달 -->
+    <div id="mobileModal">
+        <div id="mobileModalContent">
+            <h3 style="margin: 0; color: #e03131; font-size: 16px;">📱 모바일 저장 안내</h3>
+            <p style="margin: 0; font-size: 14px; color: #495057;">아래 이미지를 <strong>꾹~ 눌러서 '사진 앱에 저장'</strong>을 선택해주세요!</p>
+            
+            <img id="mobileResultImage" src="" alt="완성된 발췌 이미지">
+            
+            <button class="btn-secondary" onclick="closeModal()" style="width: 100%; font-size: 16px;">닫기</button>
         </div>
     </div>
 
@@ -246,27 +281,23 @@
         const root = document.documentElement;
         const captureWrapper = document.getElementById('capture-wrapper');
 
-        // 1. 슬라이더 실시간 적용 (오류 완벽 수정!)
+        // 1. 슬라이더 실시간 적용
         document.getElementById('fontSize').addEventListener('input', (e) => {
             editor.style.fontSize = e.target.value + 'px';
             document.getElementById('val-size').innerText = e.target.value + 'px';
         });
-
         document.getElementById('letterSpacing').addEventListener('input', (e) => {
             editor.style.letterSpacing = e.target.value + 'px';
             document.getElementById('val-space').innerText = e.target.value + 'px';
         });
-
         document.getElementById('lineHeight').addEventListener('input', (e) => {
             editor.style.lineHeight = e.target.value;
             document.getElementById('val-line').innerText = e.target.value;
         });
-
         document.getElementById('pSpacing').addEventListener('input', (e) => {
             root.style.setProperty('--p-gap', e.target.value + 'px');
             document.getElementById('val-pgap').innerText = e.target.value + 'px';
         });
-
         document.getElementById('bgPadding').addEventListener('input', (e) => {
             root.style.setProperty('--padding', e.target.value + 'px');
             document.getElementById('val-padding').innerText = e.target.value + 'px';
@@ -276,16 +307,13 @@
         document.getElementById('fontFamily').addEventListener('change', (e) => {
             editor.style.fontFamily = e.target.value;
         });
-
         document.getElementById('textColor').addEventListener('input', (e) => {
             root.style.setProperty('--text-color', e.target.value);
         });
-
         document.getElementById('bgColor').addEventListener('input', (e) => {
             root.style.setProperty('--bg-color', e.target.value);
             captureWrapper.style.backgroundImage = 'none';
         });
-
         document.getElementById('bgImage').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(file) {
@@ -297,26 +325,16 @@
             }
         });
 
-        // 3. 부분 꾸미기 기능 (굵게, 글자색, 형광펜, 지우기)
-        
-        // 굵게
-        function applyBold() {
-            document.execCommand('bold', false, null);
-        }
-
-        // 부분 글자색
+        // 3. 부분 꾸미기 기능
+        function applyBold() { document.execCommand('bold', false, null); }
         function applyPartColor() {
             const color = document.getElementById('partColor').value;
             document.execCommand('foreColor', false, color);
         }
-
-        // 형광펜 (배경색)
         function applyHighlight() {
             const color = document.getElementById('hlColor').value;
             document.execCommand('backColor', false, color);
         }
-
-        // 서식 지우기 (굵게, 색상, 형광펜 초기화)
         function removeFormat() {
             document.execCommand('removeFormat', false, null);
             document.execCommand('backColor', false, 'transparent');
@@ -360,7 +378,7 @@
             }
         }
 
-        // 6. 내보내기 로직
+        // 6. 캡처 및 내보내기 로직 (모바일 호환성 패치)
         const getCanvasOptions = () => ({ scale: 2, useCORS: true, backgroundColor: null });
 
         function copyToClipboard() {
@@ -376,7 +394,7 @@
                             setTimeout(() => btn.innerText = originalText, 2000);
                         });
                     } catch (err) {
-                        alert("브라우저가 이미지 클립보드 복사를 지원하지 않습니다. 저장을 이용해주세요.");
+                        alert("모바일 브라우저에서는 클립보드 복사가 차단될 수 있습니다. 아래 '이미지 저장'을 이용해주세요.");
                         btn.innerText = originalText;
                     }
                 });
@@ -386,14 +404,33 @@
         function downloadImage() {
             const btn = document.querySelector('.btn-secondary');
             const originalText = btn.innerText;
-            btn.innerText = "⏳ 저장 중...";
+            btn.innerText = "⏳ 이미지 굽는 중...";
+            
             html2canvas(captureWrapper, getCanvasOptions()).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'LogSnap_' + Date.now() + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                // 모바일 환경인지 체크 (스마트폰, 태블릿 등)
+                const isMobile = /iPhone|iPad|iPod|Android|Kakao|Twitter|Instagram/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    // 모바일이면 모달을 띄워서 꾹 눌러서 저장하게 유도
+                    document.getElementById('mobileResultImage').src = dataUrl;
+                    document.getElementById('mobileModal').style.display = 'flex';
+                } else {
+                    // PC면 기존처럼 바로 다운로드
+                    const link = document.createElement('a');
+                    link.download = 'LogSnap_' + Date.now() + '.png';
+                    link.href = dataUrl;
+                    link.click();
+                }
                 btn.innerText = originalText;
             });
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('mobileModal').style.display = 'none';
+            document.getElementById('mobileResultImage').src = '';
         }
     </script>
 </body>
