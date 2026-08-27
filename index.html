@@ -23,8 +23,11 @@
         :root {
             --bg-color: #ffffff;
             --text-color: #333333;
+            --footer-color: #333333;
+            --footer-size: 14px;
             --p-gap: 12px;
             --padding: 60px;
+            --border-style: none;
         }
 
         * { box-sizing: border-box; }
@@ -62,7 +65,8 @@
         .control-group label { font-size: 13px; font-weight: 600; color: #495057; display: flex; justify-content: space-between;}
         
         input[type="range"] { accent-color: #1c7ed6; cursor: pointer; }
-        select, input[type="file"] { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; cursor: pointer;}
+        select, input[type="text"] { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; }
+        select { cursor: pointer; }
         
         .btn-row { display: flex; gap: 8px; }
         button { 
@@ -77,9 +81,7 @@
         .btn-hl { background: #ffeaa7; color: #000; flex: 1; }
         .btn-clear { background: #f1f3f5; color: #495057; }
         
-        .btn-primary { background: #1c7ed6; color: #fff; font-size: 15px; padding: 14px; }
-        .btn-secondary { background: #343a40; color: #fff; font-size: 15px; padding: 14px; }
-        .btn-mobile { background: #fff; color: #e03131; font-size: 16px; padding: 14px; border: 2px solid #e03131; font-weight: bold; }
+        .btn-primary { background: #1c7ed6; color: #fff; font-size: 15px; padding: 14px; margin-top: 10px; }
 
         #main { 
             flex-grow: 1; 
@@ -95,54 +97,73 @@
             background-color: var(--bg-color);
             padding: var(--padding); 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            min-width: 500px; 
-            max-width: 800px; 
-            width: 100%;
-            transition: padding 0.2s, background-color 0.3s;
-            background-size: cover; background-position: center;
+            transition: padding 0.2s, background-color 0.3s, width 0.3s;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Pretendard-Regular', 'Apple SD Gothic Neo', sans-serif;
+            border: var(--border-style);
         }
 
+        /* 가로/세로 모드 크기 설정 */
+        #capture-wrapper.portrait { width: 480px; min-height: 640px; }
+        #capture-wrapper.landscape { width: 800px; min-height: 400px; }
+
         #editor { 
-            outline: none; min-height: 100px; font-size: 16px;
+            flex-grow: 1;
+            outline: none; font-size: 16px;
             line-height: 1.6; letter-spacing: 0px; word-break: keep-all;
             color: var(--text-color);
-            font-family: 'Pretendard-Regular', 'Apple SD Gothic Neo', sans-serif;
             transition: color 0.3s;
-            padding-right: 2px; /* 자간 설정 시 우측 글자 잘림 방지 */
+            padding-right: 2px;
+            text-align: left; /* 기본 정렬 */
         }
         #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
         #editor strong { font-weight: 700; }
         
-        /* 형광펜 등 서식 렌더링 오류 방지 */
         #editor span, #editor font, #editor b, #editor strong {
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
         }
 
-        #mobileModal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 999999; flex-direction: column;
-            justify-content: center; align-items: center; padding: 20px;
+        /* ✨ 감성적인 꼬리말 (작품 제목) 스타일 ✨ */
+        #footer-display {
+            align-self: flex-end;
+            margin-top: 50px;
+            font-size: var(--footer-size);
+            color: var(--footer-color);
+            opacity: 0.65;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 0.5px;
+            word-break: keep-all;
+            transition: color 0.3s, font-size 0.2s;
         }
-        #mobileModalContent {
-            background: #fff; padding: 20px; border-radius: 12px;
-            text-align: center; width: 100%; max-width: 600px; max-height: 90vh;
-            display: flex; flex-direction: column; gap: 15px;
+        
+        /* 꼬리말 앞의 깔끔한 장식 선 */
+        #footer-display::before {
+            content: '';
+            display: block;
+            width: 30px;
+            height: 1px;
+            background-color: var(--footer-color);
+            opacity: 0.7;
+            transition: background-color 0.3s;
         }
-        #mobileResultImage {
-            max-width: 100%; max-height: 60vh; object-fit: contain;
-            border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            background: #fff; 
+
+        #footer-display:empty {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
     <div id="sidebar">
-        <div class="logo">📸 LogSnap</div>
+        <div class="logo">LogSnap</div>
 
         <div>
-            <div class="section-title">✨ 원클릭 테마</div>
+            <div class="section-title">원클릭 테마</div>
             <div class="btn-row">
                 <button class="btn-theme" onclick="setTheme('paper')">종이책</button>
                 <button class="btn-theme" onclick="setTheme('dark')">다크모드</button>
@@ -153,13 +174,13 @@
         <hr style="border: 0; border-top: 1px solid #f1f3f5;">
 
         <div>
-            <div class="section-title">✍️ 텍스트 설정</div>
+            <div class="section-title">본문 텍스트 설정</div>
             
             <div class="control-group">
-                <label>폰트 (글꼴)</label>
+                <label>본문 폰트 (글꼴)</label>
                 <select id="fontFamily">
                     <optgroup label="[사진 속 그 폰트! / 깔끔 고딕]">
-                        <option value="'Pretendard-Regular', sans-serif">프리텐다드 (추천✨)</option>
+                        <option value="'Pretendard-Regular', sans-serif">프리텐다드 (추천)</option>
                         <option value="'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">애플/맑은 고딕 (기본)</option>
                         <option value="'SpoqaHanSansNeo-Regular', sans-serif">스포카 한 산스 네오</option>
                         <option value="'SUIT-Regular', sans-serif">SUIT (수트)</option>
@@ -180,7 +201,16 @@
             </div>
 
             <div class="control-group">
-                <label>전체 글자색 <span style="font-size:10px; font-weight:normal; color:#868e96;">(색이 안바뀌면 서식 지우기 클릭)</span></label>
+                <label>정렬 방식 ✨</label>
+                <select id="textAlign">
+                    <option value="left">왼쪽 정렬 (기본)</option>
+                    <option value="justify">양쪽 정렬 (소설책 느낌)</option>
+                    <option value="center">가운데 정렬 (시/대사 느낌)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>본문 글자색 <span style="font-size:10px; font-weight:normal; color:#868e96;">(색 안바뀌면 서식 지우기)</span></label>
                 <input type="color" id="textColor" value="#333333" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px; cursor: pointer;">
             </div>
 
@@ -205,15 +235,9 @@
         <hr style="border: 0; border-top: 1px solid #f1f3f5;">
 
         <div>
-            <div class="section-title">🎨 꾸미기 & 화자 분리</div>
-            
-            <div class="control-group" style="margin-bottom: 20px;">
-                <button class="btn-action" onclick="applySmartSpeaker()">🤖 스마트 화자 분리 (이름 굵게)</button>
-                <p style="font-size:11px; color:#adb5bd; margin:2px 0 0 0; text-align:center;">'이름 : 대사' 형식을 자동으로 분리합니다.</p>
-            </div>
-
+            <div class="section-title">꾸미기</div>
             <div class="control-group">
-                <label>✨ 부분 꾸미기 (글자 드래그 후 클릭!)</label>
+                <label>부분 꾸미기 (글자 드래그 후 클릭!)</label>
                 <div class="btn-row" style="margin-bottom: 4px;">
                     <button class="btn-action" style="flex: 0.4; font-weight: 900; font-size: 15px;" onclick="applyBold()" title="굵게">B</button>
                     <input type="color" id="partColor" value="#e03131" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
@@ -230,7 +254,22 @@
         <hr style="border: 0; border-top: 1px solid #f1f3f5;">
 
         <div>
-            <div class="section-title">🖼️ 배경 & 여백</div>
+            <div class="section-title">형태 & 배경</div>
+            <div class="control-group">
+                <label>캔버스 비율 (방향)</label>
+                <select id="orientation">
+                    <option value="portrait">세로형 (책 비율)</option>
+                    <option value="landscape">가로형 (넓은 비율)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>감성 테두리 ✨</label>
+                <select id="borderStyle">
+                    <option value="none">없음</option>
+                    <option value="1px solid var(--text-color)">얇은 실선</option>
+                    <option value="4px double var(--text-color)">고급스러운 두 줄</option>
+                </select>
+            </div>
             <div class="control-group">
                 <label>여백 넓히기 <span id="val-padding">60px</span></label>
                 <input type="range" id="bgPadding" min="20" max="150" value="60" step="5">
@@ -239,34 +278,55 @@
                 <label>배경색 선택</label>
                 <input type="color" id="bgColor" value="#ffffff" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px; cursor: pointer;">
             </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f3f5;">
+        
+        <div>
+            <div class="section-title">꼬리말 설정</div>
             <div class="control-group">
-                <label>배경 이미지 업로드</label>
-                <input type="file" id="bgImage" accept="image/*">
+                <label>작품 제목 / 저자</label>
+                <input type="text" id="footerInput" placeholder="예: 해리포터와 마법사의 돌 - J.K. 롤링">
+            </div>
+            <div class="control-group">
+                <label>꼬리말 폰트</label>
+                <select id="footerFontFamily">
+                    <option value="inherit">본문 폰트와 동일하게 (기본)</option>
+                    <option value="'Pretendard-Regular', sans-serif">프리텐다드</option>
+                    <option value="'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">애플/맑은 고딕</option>
+                    <option value="'SpoqaHanSansNeo-Regular', sans-serif">스포카 한 산스 네오</option>
+                    <option value="'SUIT-Regular', sans-serif">SUIT (수트)</option>
+                    <option value="'Noto Sans KR', sans-serif">노토산스</option>
+                    <option value="'Gowun Dodum', sans-serif">고운돋움</option>
+                    <option value="'RIDIBatang', serif">리디바탕</option>
+                    <option value="'MaruBuri', serif">마루부리</option>
+                    <option value="'Gowun Batang', serif">고운바탕</option>
+                    <option value="'Nanum Myeongjo', serif">나눔명조</option>
+                    <option value="'KyoboHandwriting2019', cursive">교보 손글씨</option>
+                    <option value="'NeoDunggeunmo', monospace">둥근모 (픽셀)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>꼬리말 크기 <span id="val-footer-size">14px</span></label>
+                <input type="range" id="footerFontSize" min="10" max="30" value="14">
+            </div>
+            <div class="control-group">
+                <label>꼬리말 색상</label>
+                <input type="color" id="footerColor" value="#333333" style="width: 100%; height: 30px; border: 1px solid #ced4da; border-radius: 6px; padding: 2px; cursor: pointer;">
             </div>
         </div>
 
-        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-            <button id="btn-mobile" class="btn-mobile" onclick="openMobileModal()">📱 모바일 전용 저장 (팝업 띄우기)</button>
-            <button class="btn-secondary" onclick="downloadImagePC()">💾 PC 전용 이미지 저장 (바로 다운로드)</button>
-            <button class="btn-primary" onclick="copyToClipboard()">📋 클립보드에 복사 (PC 추천)</button>
-        </div>
+        <button class="btn-primary" onclick="downloadImage()">이미지 저장 (다운로드)</button>
     </div>
 
     <div id="main">
-        <div id="capture-wrapper">
+        <!-- 기본 클래스를 portrait(세로형)으로 설정 -->
+        <div id="capture-wrapper" class="portrait">
             <div id="editor" contenteditable="true">
                 <div>여기에 로그를 복사해서 붙여넣으세요.</div>
-                <div>폰에서는 좌측 하단의 [📱 모바일 전용 저장] 버튼을 누르시면 됩니다!</div>
             </div>
-        </div>
-    </div>
-
-    <div id="mobileModal">
-        <div id="mobileModalContent" onclick="event.stopPropagation()">
-            <h3 style="margin: 0; color: #e03131; font-size: 18px; font-weight: bold;">📱 모바일 저장 안내</h3>
-            <p style="margin: 0; font-size: 14px; color: #495057;">아래 이미지를 <strong>꾹~ 눌러서 '사진 앱에 저장'</strong> 해주세요!</p>
-            <img id="mobileResultImage" src="" alt="완성된 발췌 이미지">
-            <button class="btn-secondary" onclick="closeModal()" style="width: 100%; font-size: 16px; padding: 12px;">닫기</button>
+            <!-- 꼬리말이 표시될 영역 -->
+            <div id="footer-display"></div>
         </div>
     </div>
 
@@ -274,6 +334,7 @@
         const editor = document.getElementById('editor');
         const root = document.documentElement;
         const captureWrapper = document.getElementById('capture-wrapper');
+        const footerDisplay = document.getElementById('footer-display');
 
         // 외부에서 붙여넣을 때 숨겨진 색상 태그 등 서식을 강제로 벗겨내서 '전체 글자색'이 무조건 먹히게 만듦
         editor.addEventListener('paste', (e) => {
@@ -312,25 +373,65 @@
             document.getElementById('val-padding').innerText = e.target.value + 'px';
         });
 
+        // 본문 폰트 변경
         document.getElementById('fontFamily').addEventListener('change', (e) => {
-            editor.style.fontFamily = e.target.value;
+            captureWrapper.style.fontFamily = e.target.value;
         });
+        
+        // 정렬 방식 변경
+        document.getElementById('textAlign').addEventListener('change', (e) => {
+            editor.style.textAlign = e.target.value;
+        });
+
+        // 본문 색상 변경
         document.getElementById('textColor').addEventListener('input', (e) => {
             root.style.setProperty('--text-color', e.target.value);
         });
+
+        // 배경색 변경
         document.getElementById('bgColor').addEventListener('input', (e) => {
             root.style.setProperty('--bg-color', e.target.value);
-            captureWrapper.style.backgroundImage = 'none';
         });
-        document.getElementById('bgImage').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    captureWrapper.style.backgroundImage = `url(${event.target.result})`;
-                }
-                reader.readAsDataURL(file);
+
+        // 가로/세로 비율 변경
+        document.getElementById('orientation').addEventListener('change', (e) => {
+            if (e.target.value === 'portrait') {
+                captureWrapper.classList.remove('landscape');
+                captureWrapper.classList.add('portrait');
+            } else {
+                captureWrapper.classList.remove('portrait');
+                captureWrapper.classList.add('landscape');
             }
+        });
+
+        // 테두리 스타일 변경
+        document.getElementById('borderStyle').addEventListener('change', (e) => {
+            root.style.setProperty('--border-style', e.target.value);
+        });
+
+        // 꼬리말 텍스트 실시간 적용
+        document.getElementById('footerInput').addEventListener('input', (e) => {
+            footerDisplay.innerText = e.target.value;
+        });
+
+        // 꼬리말 폰트 변경
+        document.getElementById('footerFontFamily').addEventListener('change', (e) => {
+            if (e.target.value === 'inherit') {
+                footerDisplay.style.fontFamily = 'inherit';
+            } else {
+                footerDisplay.style.fontFamily = e.target.value;
+            }
+        });
+
+        // 꼬리말 크기 변경
+        document.getElementById('footerFontSize').addEventListener('input', (e) => {
+            root.style.setProperty('--footer-size', e.target.value + 'px');
+            document.getElementById('val-footer-size').innerText = e.target.value + 'px';
+        });
+
+        // 꼬리말 색상 변경
+        document.getElementById('footerColor').addEventListener('input', (e) => {
+            root.style.setProperty('--footer-color', e.target.value);
         });
 
         function applyBold() { document.execCommand('bold', false, null); }
@@ -348,46 +449,34 @@
             document.execCommand('foreColor', false, 'inherit');
         }
 
-        function applySmartSpeaker() {
-            const textLines = editor.innerText.split('\n');
-            const newHtml = textLines.map(line => {
-                if (!line.trim()) return '<div><br></div>';
-                const match = line.match(/^(.*?)(:|：)(.*)$/);
-                if (match) {
-                    return `<div><strong>${match[1]}</strong>${match[2]}${match[3]}</div>`;
-                }
-                return `<div>${line}</div>`;
-            }).join('');
-            editor.innerHTML = newHtml;
-        }
-
         function setTheme(type) {
-            captureWrapper.style.backgroundImage = 'none';
             const textColorInput = document.getElementById('textColor');
             const bgColorInput = document.getElementById('bgColor');
             const fontSelect = document.getElementById('fontFamily');
+            const footerColorInput = document.getElementById('footerColor');
 
             if (type === 'paper') {
                 root.style.setProperty('--bg-color', '#fdfbf7'); 
                 root.style.setProperty('--text-color', '#3e3a39');
-                textColorInput.value = '#3e3a39'; bgColorInput.value = '#fdfbf7';
-                fontSelect.value = "'RIDIBatang', serif"; editor.style.fontFamily = "'RIDIBatang', serif";
+                root.style.setProperty('--footer-color', '#3e3a39');
+                textColorInput.value = '#3e3a39'; bgColorInput.value = '#fdfbf7'; footerColorInput.value = '#3e3a39';
+                fontSelect.value = "'RIDIBatang', serif"; captureWrapper.style.fontFamily = "'RIDIBatang', serif";
             } else if (type === 'dark') {
                 root.style.setProperty('--bg-color', '#212529'); 
                 root.style.setProperty('--text-color', '#f8f9fa');
-                textColorInput.value = '#f8f9fa'; bgColorInput.value = '#212529';
-                fontSelect.value = "'Pretendard-Regular', sans-serif"; editor.style.fontFamily = "'Pretendard-Regular', sans-serif";
+                root.style.setProperty('--footer-color', '#f8f9fa');
+                textColorInput.value = '#f8f9fa'; bgColorInput.value = '#212529'; footerColorInput.value = '#f8f9fa';
+                fontSelect.value = "'Pretendard-Regular', sans-serif"; captureWrapper.style.fontFamily = "'Pretendard-Regular', sans-serif";
             } else if (type === 'trpg') {
                 root.style.setProperty('--bg-color', '#000000'); 
                 root.style.setProperty('--text-color', '#39ff14'); 
-                textColorInput.value = '#39ff14'; bgColorInput.value = '#000000';
-                fontSelect.value = "'NeoDunggeunmo', monospace"; editor.style.fontFamily = "'NeoDunggeunmo', monospace";
+                root.style.setProperty('--footer-color', '#39ff14');
+                textColorInput.value = '#39ff14'; bgColorInput.value = '#000000'; footerColorInput.value = '#39ff14';
+                fontSelect.value = "'NeoDunggeunmo', monospace"; captureWrapper.style.fontFamily = "'NeoDunggeunmo', monospace";
             }
         }
 
-        // --------------------------------------------------------
-        // 💡 [초강력 버그 픽스] 글자 밀림 & 글자 누락 완벽 방어 캡처 엔진
-        // --------------------------------------------------------
+        // 글자 밀림 & 글자 누락 방어 캡처 엔진
         async function generateCanvas() {
             const mainEl = document.getElementById('main');
             const origScrollTop = mainEl.scrollTop;
@@ -398,13 +487,11 @@
             const origShadow = captureWrapper.style.boxShadow;
             captureWrapper.style.boxShadow = 'none';
             
-            // 폰트가 완전히 불려오기 전에 캡처해서 기본 폰트로 깨지거나 누락되는 것을 방지
             await document.fonts.ready;
             await new Promise(r => setTimeout(r, 150)); 
 
             try {
                 const canvas = await html2canvas(captureWrapper, {
-                    // 모바일(아이폰)에서 너무 큰 캔버스로 인해 메모리 초과로 글자가 하얗게 날아가는 것 방지
                     scale: Math.min(window.devicePixelRatio || 2, 2), 
                     useCORS: true,
                     backgroundColor: root.style.getPropertyValue('--bg-color') || '#ffffff',
@@ -412,9 +499,6 @@
                     onclone: function(clonedDoc) {
                         const editorClone = clonedDoc.getElementById('editor');
                         
-                        // 🚨 아이폰(Safari) 형광펜 줄바꿈 글자 밀림 현상 강제 수정 해킹
-                        // 문장 전체를 하나의 박스로 인식해서 위치를 엉뚱하게 계산하는 브라우저 버그를 막기 위해,
-                        // 캡처하는 순간에만 모든 텍스트를 '단어 단위'로 잘게 쪼개서 개별 박스(inline-block)로 만듭니다.
                         const walk = clonedDoc.createTreeWalker(editorClone, NodeFilter.SHOW_TEXT, null, false);
                         const textNodes = [];
                         while(walk.nextNode()) textNodes.push(walk.currentNode);
@@ -423,7 +507,7 @@
                             if (!node.nodeValue.trim()) return;
                             const parent = node.parentNode;
                             const fragment = clonedDoc.createDocumentFragment();
-                            const words = node.nodeValue.split(/(\s+)/); // 띄어쓰기 기준으로 쪼갬
+                            const words = node.nodeValue.split(/(\s+)/);
                             
                             words.forEach(word => {
                                 if (!word) return;
@@ -431,7 +515,7 @@
                                     fragment.appendChild(clonedDoc.createTextNode(word));
                                 } else {
                                     const span = clonedDoc.createElement('span');
-                                    span.style.display = 'inline-block'; // 절대 줄바꿈 좌표 계산이 꼬이지 않게 고정
+                                    span.style.display = 'inline-block';
                                     span.style.verticalAlign = 'baseline';
                                     span.textContent = word;
                                     fragment.appendChild(span);
@@ -449,32 +533,10 @@
             }
         }
 
-        async function openMobileModal() {
-            const btn = document.getElementById('btn-mobile');
+        async function downloadImage() {
+            const btn = document.querySelector('.btn-primary');
             const originalText = btn.innerText;
-            btn.innerText = "⏳ 팝업 생성 중...";
-
-            try {
-                const canvas = await generateCanvas();
-                document.getElementById('mobileResultImage').src = canvas.toDataURL('image/png');
-                document.getElementById('mobileModal').style.display = 'flex';
-            } catch (err) {
-                alert("이미지 생성 중 오류가 발생했습니다.\n상세오류: " + err);
-            } finally {
-                btn.innerText = originalText;
-            }
-        }
-
-        document.getElementById('mobileModal').addEventListener('click', closeModal);
-        function closeModal() {
-            document.getElementById('mobileModal').style.display = 'none';
-            document.getElementById('mobileResultImage').src = '';
-        }
-
-        async function downloadImagePC() {
-            const btn = document.querySelector('.btn-secondary');
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ 다운로드 중...";
+            btn.innerText = "다운로드 중...";
 
             try {
                 const canvas = await generateCanvas();
@@ -486,31 +548,6 @@
                 alert("오류가 발생했습니다: " + err);
             } finally {
                 btn.innerText = originalText;
-            }
-        }
-
-        async function copyToClipboard() {
-            const btn = document.querySelector('.btn-primary');
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ 복사 중...";
-
-            try {
-                const canvas = await generateCanvas();
-                canvas.toBlob(blob => {
-                    try {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        navigator.clipboard.write([item]).then(() => {
-                            btn.innerText = "✅ 복사 완료! (Ctrl+V)";
-                            setTimeout(() => btn.innerText = originalText, 2000);
-                        });
-                    } catch (err) {
-                        alert("현재 브라우저에서는 클립보드 복사를 지원하지 않습니다. 이미지 저장을 이용해주세요.");
-                    }
-                });
-            } catch (err) {
-                alert("오류가 발생했습니다: " + err);
-            } finally {
-                if(btn.innerText === "⏳ 복사 중...") btn.innerText = originalText;
             }
         }
     </script>
