@@ -116,6 +116,8 @@
             transition: color 0.3s;
             padding-right: 2px;
             text-align: left; /* 기본 정렬 */
+            text-justify: inter-word; /* ✨ 일본어/한자 양쪽정렬 시 글자 찢어짐 방지 */
+            overflow-wrap: break-word; /* ✨ 띄어쓰기 없는 긴 문장 화면 밖으로 나감 방지 */
         }
         #editor p, #editor div { margin-top: 0; margin-bottom: var(--p-gap); }
         #editor strong { font-weight: 700; }
