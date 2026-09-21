@@ -24,10 +24,10 @@
             --bg-color: #ffffff;
             --text-color: #303030;
             --footer-color: #333333;
-            --footer-size: 13px;
+            --footer-size: 15px; /* 꼬리말 크기 변경 */
             --footer-space: -1px;
             --p-gap: 12px;
-            --padding: 80px;
+            --padding: 75px;
             --border-style: none;
         }
 
@@ -111,7 +111,7 @@
         #editor { 
             flex-grow: 1;
             outline: none; 
-            font-size: 16px; 
+            font-size: 17px; 
             line-height: 1.4; 
             letter-spacing: -1px; 
             word-break: keep-all;
@@ -198,8 +198,8 @@
             </div>
 
             <div class="control-group">
-                <label>글씨 크기 <span id="val-size">16px</span></label>
-                <input type="range" id="fontSize" min="12" max="40" value="16">
+                <label>글씨 크기 <span id="val-size">17px</span></label>
+                <input type="range" id="fontSize" min="12" max="40" value="17">
             </div>
             <div class="control-group">
                 <label>자간 (글자 간격) <span id="val-space">-1px</span></label>
@@ -254,8 +254,8 @@
                 </select>
             </div>
             <div class="control-group">
-                <label>여백 넓히기 <span id="val-padding">80px</span></label>
-                <input type="range" id="bgPadding" min="20" max="150" value="80" step="5">
+                <label>여백 넓히기 <span id="val-padding">75px</span></label>
+                <input type="range" id="bgPadding" min="20" max="150" value="75" step="5">
             </div>
             <div class="control-group">
                 <label>배경색 선택</label>
@@ -310,8 +310,8 @@
                 </select>
             </div>
             <div class="control-group">
-                <label>꼬리말 크기 <span id="val-footer-size">13px</span></label>
-                <input type="range" id="footerFontSize" min="10" max="30" value="13">
+                <label>꼬리말 크기 <span id="val-footer-size">15px</span></label> <!-- 꼬리말 텍스트 변경 -->
+                <input type="range" id="footerFontSize" min="10" max="30" value="15"> <!-- 꼬리말 슬라이더 값 변경 -->
             </div>
             <div class="control-group">
                 <label>꼬리말 자간 <span id="val-footer-space">-1px</span></label>
