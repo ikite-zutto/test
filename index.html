@@ -24,7 +24,7 @@
             --bg-color: #ffffff;
             --text-color: #303030;
             --footer-color: #333333;
-            --footer-size: 15px; /* 꼬리말 크기 변경 */
+            --footer-size: 15px;
             --footer-space: -1px;
             --p-gap: 12px;
             --padding: 75px;
@@ -221,11 +221,19 @@
             <div class="section-title">꾸미기</div>
             <div class="control-group">
                 <label>부분 꾸미기 (글자 드래그 후 클릭!)</label>
+                
+                <!-- 새롭게 추가된 부분 글자 크기 조절 -->
                 <div class="btn-row" style="margin-bottom: 4px;">
+                    <input type="number" id="partFontSize" value="24" style="width: 60px; padding: 8px 4px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; text-align: center;" title="크기(px)">
+                    <button class="btn-action" onclick="applyPartFontSize()">크기 적용</button>
                     <button class="btn-action" style="flex: 0.4; font-weight: 900; font-size: 15px;" onclick="applyBold()" title="굵게">B</button>
+                </div>
+                
+                <div class="btn-row" style="margin-bottom: 4px;">
                     <input type="color" id="partColor" value="#e03131" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
                     <button class="btn-action" onclick="applyPartColor()">글자색 적용</button>
                 </div>
+                
                 <div class="btn-row">
                     <input type="color" id="hlColor" value="#d3d3d3" style="width: 38px; height: 38px; padding: 0; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer;">
                     <button class="btn-hl" onclick="applyHighlight()">형광펜 칠하기</button>
@@ -268,7 +276,6 @@
         <div>
             <div class="section-title">꼬리말 설정</div>
             
-            <!-- 작품 제목 선택 & 입력 -->
             <div class="control-group">
                 <label>작품 제목</label>
                 <select id="titleSelect" style="margin-bottom: 4px;">
@@ -280,7 +287,6 @@
                 <input type="text" id="footerTitle" placeholder="작품 제목 입력">
             </div>
             
-            <!-- 저자 선택 & 입력 -->
             <div class="control-group">
                 <label>저자</label>
                 <select id="authorSelect" style="margin-bottom: 4px;">
@@ -310,8 +316,8 @@
                 </select>
             </div>
             <div class="control-group">
-                <label>꼬리말 크기 <span id="val-footer-size">15px</span></label> <!-- 꼬리말 텍스트 변경 -->
-                <input type="range" id="footerFontSize" min="10" max="30" value="15"> <!-- 꼬리말 슬라이더 값 변경 -->
+                <label>꼬리말 크기 <span id="val-footer-size">15px</span></label>
+                <input type="range" id="footerFontSize" min="10" max="30" value="15"> 
             </div>
             <div class="control-group">
                 <label>꼬리말 자간 <span id="val-footer-space">-1px</span></label>
@@ -412,7 +418,6 @@
             root.style.setProperty('--border-style', e.target.value);
         });
 
-        // 꼬리말 텍스트 업데이트 로직 (제목 │ 저자)
         function updateFooterText() {
             const title = footerTitleInput.value.trim();
             const author = footerAuthorInput.value.trim();
@@ -428,7 +433,6 @@
             }
         }
 
-        // 드롭다운 선택 시 입력창에 값 반영
         titleSelect.addEventListener('change', function() {
             if (this.value !== "") {
                 footerTitleInput.value = this.value;
@@ -443,7 +447,6 @@
             updateFooterText();
         });
 
-        // 직접 입력 시에도 실시간 반영
         footerTitleInput.addEventListener('input', updateFooterText);
         footerAuthorInput.addEventListener('input', updateFooterText);
 
@@ -470,6 +473,19 @@
         });
 
         function applyBold() { document.execCommand('bold', false, null); }
+        
+        // 새롭게 추가된 부분 글자 크기 조절 기능
+        function applyPartFontSize() {
+            const size = document.getElementById('partFontSize').value;
+            if (!size) return;
+            document.execCommand("fontSize", false, "7");
+            const fontElements = document.querySelectorAll('font[size="7"]');
+            fontElements.forEach(el => {
+                el.removeAttribute("size");
+                el.style.fontSize = size + "px";
+            });
+        }
+        
         function applyPartColor() {
             const color = document.getElementById('partColor').value;
             document.execCommand('foreColor', false, color);
@@ -482,9 +498,19 @@
             document.execCommand('removeFormat', false, null);
             document.execCommand('backColor', false, 'transparent');
             document.execCommand('foreColor', false, 'inherit');
+            
+            // 커스텀으로 설정된 글자 크기도 초기화
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            const parent = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode;
+            
+            const fonts = parent.querySelectorAll('font, span');
+            fonts.forEach(el => {
+                el.style.fontSize = '';
+            });
         }
 
-        // 고화질 캡처 엔진 (scale 4배수 적용)
         async function generateCanvas() {
             const mainEl = document.getElementById('main');
             const origScrollTop = mainEl.scrollTop;
@@ -500,7 +526,7 @@
 
             try {
                 const canvas = await html2canvas(captureWrapper, {
-                    scale: 4, // ✨ 4K급 초고화질 캡처를 위해 스케일을 4로 대폭 상향
+                    scale: 4, 
                     useCORS: true,
                     backgroundColor: root.style.getPropertyValue('--bg-color') || '#ffffff',
                     logging: false,
@@ -544,7 +570,7 @@
         async function downloadImage() {
             const btn = document.querySelector('.btn-primary');
             const originalText = btn.innerText;
-            btn.innerText = "초고화질로 변환 중..."; // 고화질 렌더링 시 약간의 시간이 걸릴 수 있어 텍스트 변경
+            btn.innerText = "초고화질로 변환 중..."; 
 
             try {
                 const canvas = await generateCanvas();
